@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BiliFlow</string>
+    <string name="app_subtitle">轻量 B 站客户端</string>
+    <string name="disclaimer">非官方客户端，仅用于学习与个人账号使用。内容来自哔哩哔哩公开 Web 接口；大会员清晰度仅按登录账号自身权益请求，不做绕过。</string>
+</resources>
