@@ -30,6 +30,7 @@ private const val MEDIA_UA =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
         "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun rememberBiliPlayer(): ExoPlayer {
     val context = LocalContext.current
@@ -61,6 +62,7 @@ fun rememberBiliPlayer(): ExoPlayer {
     return player
 }
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 fun biliMediaSource(info: PlayInfo): MediaSource {
     val headers = mutableMapOf(
         "Referer" to "https://www.bilibili.com/",
@@ -94,11 +96,12 @@ fun biliMediaSource(info: PlayInfo): MediaSource {
     }
 }
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun BiliPlayerSurface(
     player: ExoPlayer,
-    fillScreen: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fillScreen: Boolean = false
 ) {
     AndroidView(
         factory = { context ->

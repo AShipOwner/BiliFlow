@@ -40,6 +40,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -81,7 +82,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.File
 
-/** 我的：版式对齐抖音个人主页（浅色/深色跟随全局主题），只保留 B 站真实有的能力。 */
 @Composable
 fun ProfileScreen(
     onOpenVideo: (VideoItem) -> Unit,
@@ -154,8 +154,8 @@ fun ProfileScreen(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .offset(y = (-22).dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .offset(y = (-20).dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(appSurface())
             ) {
                 Row(
@@ -171,12 +171,12 @@ fun ProfileScreen(
                         color = appText(),
                         fontSize = 13.sp,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFF1F1F2))
-                            .pressClickable(pressedScale = 0.94f) {
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(appField())
+                            .pressClickable(pressedScale = 0.95f) {
                                 if ((user?.mid ?: 0L) > 0L) showEdit = true else UiMessages.show("请先登录")
                             }
-                            .padding(horizontal = 14.dp, vertical = 7.dp)
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
                     )
                 }
 
@@ -194,40 +194,40 @@ fun ProfileScreen(
                 )
 
                 Spacer(Modifier.height(16.dp))
-                Row(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(appField())
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     listOf("作品", "日常", "收藏").forEachIndexed { index, label ->
                         val selected = tab == index
-                        val textColor by animateColorAsState(
-                            targetValue = if (selected) appText() else appTextMuted(),
+                        val tabBackground by animateColorAsState(
+                            targetValue = if (selected) appSurface() else Color.Transparent,
                             animationSpec = tween(180),
-                            label = "profileTabText"
+                            label = "profileTabBackground"
                         )
-                        val indicatorWidth by animateDpAsState(
-                            targetValue = if (selected) 24.dp else 0.dp,
-                            animationSpec = BiliMotion.slideSpring(),
-                            label = "profileTabIndicator"
-                        )
-                        Column(
-                            Modifier.weight(1f).pressClickable(pressedScale = 0.94f) { tab = index },
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(tabBackground)
+                                .pressClickable(pressedScale = 0.97f) { tab = index },
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (index == 0) "$label ${works.size}" else label,
-                                color = textColor,
-                                fontSize = 15.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Box(
-                                Modifier
-                                    .width(indicatorWidth)
-                                    .height(2.dp)
-                                    .background(textColor, CircleShape)
+                                color = if (selected) appText() else appTextMuted(),
+                                fontSize = 14.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
                             )
                         }
                     }
                 }
-                HorizontalDivider(color = appDivider())
             }
         }
 
@@ -244,8 +244,8 @@ fun ProfileScreen(
                 if (!loading && works.isEmpty()) item { EmptyBlock("还没有作品") }
                 items(works.chunked(3)) { row ->
                     Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         row.forEach { video ->
                             WorkCell(video, Modifier.weight(1f)) { onOpenVideo(video) }
@@ -398,12 +398,8 @@ private fun ProfileHeader(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(300.dp)
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF3D7FC4), Color(0xFF63A6DB), Color(0xFF8FC4E8))
-                )
-            )
+            .height(240.dp)
+            .background(appField())
     ) {
         if (banner.isNotBlank()) {
             RemoteImage(
@@ -412,42 +408,54 @@ private fun ProfileHeader(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 targetWidth = 1080,
-                placeholder = Color(0xFF3D7FC4)
+                placeholder = appField()
             )
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.18f)))
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.24f)))
+        } else {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(BiliAccent.copy(alpha = 0.20f), appBackground())
+                        )
+                    )
+            )
         }
 
         Row(
             Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(Modifier.weight(1f))
             Box(
                 Modifier
-                    .size(34.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.28f))
-                    .noRippleClickable { onMenu() },
+                    .background(Color.Black.copy(alpha = 0.30f))
+                    .pressClickable(pressedScale = 0.94f) { onMenu() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.Menu, null, tint = Color.White, modifier = Modifier.size(19.dp))
+                Icon(Icons.Filled.Settings, "设置", tint = Color.White, modifier = Modifier.size(20.dp))
             }
         }
 
         Row(
             Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 18.dp, bottom = 64.dp),
-            verticalAlignment = Alignment.Bottom
+                .padding(start = 20.dp, end = 20.dp, bottom = 42.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 Modifier
-                    .size(92.dp)
+                    .size(80.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2B3A44))
+                    .background(appSurface())
+                    .padding(3.dp)
+                    .clip(CircleShape)
             ) {
                 RemoteImage(
                     url = avatar,
@@ -457,29 +465,20 @@ private fun ProfileHeader(
                 )
             }
             Spacer(Modifier.width(14.dp))
-            Column(Modifier.padding(bottom = 6.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = name,
-                        color = Color.White,
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    Icon(
-                        Icons.Filled.ArrowDropDown,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+            Column {
+                Text(
+                    text = name,
+                    color = if (banner.isNotBlank()) Color.White else appText(),
+                    fontSize = 21.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "UID：${if (uid > 0L) uid else "未登录"}",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 12.sp,
+                    text = if (uid > 0L) "UID $uid" else "登录后完善你的主页",
+                    color = if (banner.isNotBlank()) Color.White.copy(alpha = 0.78f) else appTextMuted(),
+                    fontSize = 11.sp
                 )
             }
         }
@@ -513,12 +512,13 @@ private fun StatColumn(label: String, value: Long, clickable: Boolean = false, o
 
 @Composable
 private fun WorkCell(video: VideoItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Column(modifier.pressClickable(pressedScale = 0.96f) { onClick() }) {
+    Column(modifier.pressClickable(pressedScale = 0.97f) { onClick() }) {
         Box(
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(3f / 4f)
-                .background(if (LocalAppDark.current) Color(0xFF1B1B1F) else Color(0xFFE9E9EC))
+                .clip(RoundedCornerShape(14.dp))
+                .background(appField())
         ) {
             RemoteImage(
                 url = video.cover,
@@ -526,29 +526,35 @@ private fun WorkCell(video: VideoItem, modifier: Modifier = Modifier, onClick: (
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 targetWidth = 300,
-                placeholder = if (LocalAppDark.current) Color(0xFF1B1B1F) else Color(0xFFE9E9EC)
+                placeholder = appField()
+            )
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.62f to Color.Transparent,
+                            1f to Color.Black.copy(alpha = 0.58f)
+                        )
+                    )
             )
             Row(
-                Modifier.align(Alignment.BottomStart).padding(4.dp),
+                Modifier.align(Alignment.BottomStart).padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.size(11.dp))
-                Text(
-                    text = formatCount(video.view),
-                    color = Color.White,
-                    fontSize = 9.sp,
-                    fontFamily = DouyinNumber
-                )
+                Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                Spacer(Modifier.width(2.dp))
+                Text(formatCount(video.view), color = Color.White, fontSize = 10.sp)
             }
         }
         Text(
             text = video.title,
             color = appText(),
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             maxLines = 2,
-            lineHeight = 14.sp,
+            lineHeight = 17.sp,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 3.dp, start = 2.dp, end = 2.dp)
+            modifier = Modifier.padding(top = 6.dp, start = 2.dp, end = 2.dp)
         )
     }
 }
@@ -561,7 +567,7 @@ private fun DynamicRow(dynamic: DynamicItem, onOpenVideo: (String) -> Unit) {
                 Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .background(if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFEDEDEF))
+                    .background(appChip())
             ) {
                 RemoteImage(
                     url = dynamic.authorFace,
@@ -610,7 +616,7 @@ private fun DynamicRow(dynamic: DynamicItem, onOpenVideo: (String) -> Unit) {
             Row(
                 Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (LocalAppDark.current) Color(0xFF1F1F23) else Color(0xFFF4F4F5))
+                    .background(appField())
                     .noRippleClickable { onOpenVideo(dynamic.bvid) }
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -619,7 +625,7 @@ private fun DynamicRow(dynamic: DynamicItem, onOpenVideo: (String) -> Unit) {
                     Modifier
                         .size(46.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFE9E9EC))
+                        .background(appField())
                 ) {
                     RemoteImage(
                         url = dynamic.image,
@@ -643,8 +649,8 @@ private fun DynamicRow(dynamic: DynamicItem, onOpenVideo: (String) -> Unit) {
 
 @Composable
 private fun EmptyBlock(text: String) {
-    Box(Modifier.fillMaxWidth().padding(vertical = 60.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = appTextMuted(), fontSize = 13.sp)
+    Box(Modifier.fillMaxWidth().padding(vertical = 36.dp), contentAlignment = Alignment.Center) {
+        AppEmptyState(title = text, description = "内容更新后会显示在这里")
     }
 }
 
@@ -691,10 +697,11 @@ private fun ProfileEditSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = appSurface(),
-        contentColor = appText()
+        contentColor = appText(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 22.dp)) {
-            Text("编辑主页", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = appText())
+            Text("编辑主页", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = appText())
             Spacer(Modifier.height(4.dp))
             Text(
                 "昵称/签名保存时同步到 B 站；头像/背景可从相册上传，本机生效",
@@ -713,7 +720,8 @@ private fun ProfileEditSheet(
                 picker.launch("image/*")
             }
             Spacer(Modifier.height(14.dp))
-            Button(
+            AppPrimaryButton(
+                text = "保存并同步到 B 站",
                 onClick = {
                     onSave(name.trim(), sign.trim(), avatar.trim(), banner.trim())
                     scope.launch {
@@ -722,9 +730,8 @@ private fun ProfileEditSheet(
                             .onFailure { UiMessages.show("云端同步失败：${it.message}") }
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = BiliAccent),
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("保存并同步到 B 站") }
+            )
         }
     }
 }
@@ -739,7 +746,7 @@ private fun UploadRow(label: String, value: String, isCircle: Boolean, onPick: (
                 Modifier
                     .size(if (isCircle) 52.dp else 72.dp)
                     .clip(if (isCircle) CircleShape else RoundedCornerShape(8.dp))
-                    .background(if (LocalAppDark.current) Color(0xFF1F1F23) else Color(0xFFF4F4F5))
+                    .background(appField())
             ) {
                 if (value.isNotBlank()) {
                     RemoteImage(
@@ -758,10 +765,10 @@ private fun UploadRow(label: String, value: String, isCircle: Boolean, onPick: (
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFF1F1F2))
-                    .noRippleClickable { onPick() }
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(appAccentSoft())
+                    .pressClickable(pressedScale = 0.96f) { onPick() }
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
             )
         }
     }
@@ -769,20 +776,20 @@ private fun UploadRow(label: String, value: String, isCircle: Boolean, onPick: (
 
 @Composable
 private fun EditField(label: String, value: String, onChange: (String) -> Unit) {
-    Column(Modifier.padding(vertical = 6.dp)) {
-        Text(label, color = appTextMuted(), fontSize = 11.sp)
-        Spacer(Modifier.height(4.dp))
+    Column(Modifier.padding(vertical = 7.dp)) {
+        Text(label, color = appTextMuted(), fontSize = 12.sp)
+        Spacer(Modifier.height(6.dp))
         androidx.compose.foundation.text.BasicTextField(
             value = value,
             onValueChange = onChange,
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(38.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (LocalAppDark.current) Color(0xFF1F1F23) else Color(0xFFF4F4F5))
-                .padding(horizontal = 10.dp, vertical = 9.dp),
-            textStyle = androidx.compose.ui.text.TextStyle(color = appText(), fontSize = 13.sp),
+                .height(46.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(appField())
+                .padding(horizontal = 14.dp),
+            textStyle = androidx.compose.ui.text.TextStyle(color = appText(), fontSize = 14.sp),
             cursorBrush = androidx.compose.ui.graphics.SolidColor(BiliAccent)
         )
     }
@@ -791,25 +798,25 @@ private fun EditField(label: String, value: String, onChange: (String) -> Unit) 
 @Composable
 private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val background by animateColorAsState(
-        targetValue = if (selected) BiliAccent
-        else if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFF1F1F2),
-        animationSpec = tween(200),
+        targetValue = if (selected) appAccentSoft() else appChip(),
+        animationSpec = tween(180),
         label = "settingChipBackground"
     )
     val textColor by animateColorAsState(
-        targetValue = if (selected) Color.White else appText(),
-        animationSpec = tween(200),
+        targetValue = if (selected) BiliAccent else appTextMuted(),
+        animationSpec = tween(180),
         label = "settingChipText"
     )
     Text(
         text = label,
         fontSize = 12.sp,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         color = textColor,
         modifier = Modifier
-            .clip(RoundedCornerShape(13.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(background)
-            .pressClickable(pressedScale = 0.92f) { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .pressClickable(pressedScale = 0.96f) { onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp)
     )
 }
 
@@ -834,10 +841,11 @@ private fun ProfileSettingsSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = appSurface(),
-        contentColor = appText()
+        contentColor = appText(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(Modifier.padding(horizontal = 18.dp).padding(bottom = 22.dp)) {
-            Text("设置", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = appText())
+            Text("设置", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = appText())
             Spacer(Modifier.height(12.dp))
 
             Text("外观", fontSize = 13.sp, color = appText())
@@ -922,7 +930,7 @@ private fun ProfileSettingsSheet(
 
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "BiliFlow 0.9.4 · 数据来自哔哩哔哩公开接口",
+                text = "BiliFlow 0.9.5 · 数据来自哔哩哔哩公开接口",
                 fontSize = 11.sp,
                 color = appTextMuted()
             )

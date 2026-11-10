@@ -1,7 +1,9 @@
 package com.biliflow.app.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -13,89 +15,106 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.biliflow.app.data.LocalStore
 
-// 色值来自抖音原包资源表（DouyinTokens.kt），浅色/深色两套共用同一个品牌色。
-val BiliAccent = DouyinColor.Accent
-val BiliCyan = Color(0xFF25F4EE)
-val BiliYellow = DouyinColor.Yellow
-val BiliBackground = DouyinColor.Black
-val BiliSurface = DouyinColor.Ink
-val BiliSurfaceRaised = DouyinColor.SurfaceRaised
-val BiliMuted = Color(0xFFB0B0B3)
-val BiliDivider = Color(0xFF2A2A2A)
-val BiliHairline = DouyinColor.White08
-val BiliTextSecondary = DouyinColor.White60
+val BiliAccent = Color(0xFFE95783)
+val BiliCyan = Color(0xFF4EBFB3)
+val BiliYellow = Color(0xFFF2BB4F)
+val BiliBackground = Color(0xFF0C0D10)
+val BiliSurface = Color(0xFF17191F)
+val BiliSurfaceRaised = Color(0xFF22242B)
+val BiliMuted = Color(0xFF9A9EAA)
+val BiliDivider = Color(0xFF292B32)
+val BiliHairline = Color(0x14FFFFFF)
+val BiliTextSecondary = Color(0xFF9A9EAA)
 
 val LocalAppDark = staticCompositionLocalOf { true }
 
-/** 页面底色（跟随主题） */
 @Composable
-fun appBackground(): Color = if (LocalAppDark.current) Color(0xFF0B0B0C) else Color(0xFFF7F7F8)
+fun appBackground(): Color = if (LocalAppDark.current) Color(0xFF0F1014) else Color(0xFFF6F7F9)
 
-/** 卡片底色 */
 @Composable
-fun appSurface(): Color = if (LocalAppDark.current) Color(0xFF161823) else Color.White
+fun appSurface(): Color = if (LocalAppDark.current) Color(0xFF17191F) else Color.White
 
-/** 主文字 */
 @Composable
-fun appText(): Color = if (LocalAppDark.current) Color.White else Color(0xFF161823)
+fun appSurfaceRaised(): Color = if (LocalAppDark.current) Color(0xFF202229) else Color.White
 
-/** 次要文字 */
 @Composable
-fun appTextMuted(): Color = if (LocalAppDark.current) Color(0xFFB0B0B3) else Color(0xFF8A8A8F)
+fun appText(): Color = if (LocalAppDark.current) Color(0xFFF4F5F7) else Color(0xFF191B20)
 
-/** 分隔线 */
 @Composable
-fun appDivider(): Color = if (LocalAppDark.current) Color(0xFF2A2A2A) else Color(0xFFEDEDEF)
+fun appTextMuted(): Color = if (LocalAppDark.current) Color(0xFF9A9EAA) else Color(0xFF747984)
 
-/** 输入框 / 次级容器 */
 @Composable
-fun appField(): Color = if (LocalAppDark.current) Color(0xFF1F1F23) else Color(0xFFF1F1F3)
+fun appDivider(): Color = if (LocalAppDark.current) Color(0xFF2A2C33) else Color(0xFFE9EBEF)
 
-/** chip / 轻按钮 */
 @Composable
-fun appChip(): Color = if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFEDEDEF)
+fun appField(): Color = if (LocalAppDark.current) Color(0xFF1D1F26) else Color(0xFFF0F1F4)
+
+@Composable
+fun appChip(): Color = if (LocalAppDark.current) Color(0xFF262931) else Color(0xFFEDEFF3)
+
+@Composable
+fun appAccentSoft(): Color = BiliAccent.copy(alpha = if (LocalAppDark.current) 0.17f else 0.10f)
 
 private val DarkScheme = darkColorScheme(
     primary = BiliAccent,
     onPrimary = Color.White,
+    primaryContainer = Color(0xFF42232F),
+    onPrimaryContainer = Color(0xFFFFDDE6),
     secondary = BiliCyan,
-    onSecondary = Color.Black,
-    background = Color(0xFF0B0B0C),
-    onBackground = Color.White,
-    surface = DouyinColor.Ink,
-    onSurface = Color.White,
-    surfaceVariant = DouyinColor.SurfaceRaised,
-    onSurfaceVariant = BiliMuted,
-    outline = Color(0xFF2A2A2A)
+    onSecondary = Color(0xFF082724),
+    background = Color(0xFF0F1014),
+    onBackground = Color(0xFFF4F5F7),
+    surface = Color(0xFF17191F),
+    onSurface = Color(0xFFF4F5F7),
+    surfaceVariant = Color(0xFF22242B),
+    onSurfaceVariant = Color(0xFF9A9EAA),
+    outline = Color(0xFF2A2C33),
+    error = Color(0xFFFFB4AB)
 )
 
 private val LightScheme = lightColorScheme(
     primary = BiliAccent,
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFE4EB),
+    onPrimaryContainer = Color(0xFF56182D),
     secondary = BiliCyan,
-    onSecondary = Color.Black,
-    background = Color(0xFFF7F7F8),
-    onBackground = Color(0xFF161823),
+    onSecondary = Color.White,
+    background = Color(0xFFF6F7F9),
+    onBackground = Color(0xFF191B20),
     surface = Color.White,
-    onSurface = Color(0xFF161823),
-    surfaceVariant = Color(0xFFF1F1F2),
-    onSurfaceVariant = Color(0xFF8A8A8F),
-    outline = Color(0xFFEDEDEF)
+    onSurface = Color(0xFF191B20),
+    surfaceVariant = Color(0xFFF0F1F4),
+    onSurfaceVariant = Color(0xFF747984),
+    outline = Color(0xFFE2E4E9),
+    error = Color(0xFFBA1A1A)
 )
 
 private val BiliTypography = Typography().run {
     copy(
-        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.Bold),
-        titleLarge = titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = DouyinType.display),
-        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = DouyinType.headline),
-        bodyLarge = bodyLarge.copy(lineHeight = 22.sp),
-        bodyMedium = bodyMedium.copy(lineHeight = 20.sp, fontSize = DouyinType.title)
+        headlineSmall = headlineSmall.copy(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp),
+        titleLarge = titleLarge.copy(fontSize = 23.sp, lineHeight = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
+        titleMedium = titleMedium.copy(fontSize = 18.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold),
+        titleSmall = titleSmall.copy(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold),
+        bodyLarge = bodyLarge.copy(fontSize = 16.sp, lineHeight = 24.sp),
+        bodyMedium = bodyMedium.copy(fontSize = 14.sp, lineHeight = 21.sp),
+        bodySmall = bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp),
+        labelLarge = labelLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+        labelMedium = labelMedium.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium)
     )
 }
+
+private val BiliShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
 
 private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
     is android.app.Activity -> this
@@ -104,7 +123,8 @@ private tailrec fun android.content.Context.findActivity(): android.app.Activity
 }
 
 @Composable
-fun BiliFlowTheme(content: @Composable () -> Unit) {    val mode by LocalStore.themeMode.collectAsStateCompat()
+fun BiliFlowTheme(content: @Composable () -> Unit) {
+    val mode by LocalStore.themeMode.collectAsStateCompat()
     val dark = when (mode) {
         1 -> false
         2 -> true
@@ -122,6 +142,7 @@ fun BiliFlowTheme(content: @Composable () -> Unit) {    val mode by LocalStore.t
         MaterialTheme(
             colorScheme = if (dark) DarkScheme else LightScheme,
             typography = BiliTypography,
+            shapes = BiliShapes,
             content = content
         )
     }

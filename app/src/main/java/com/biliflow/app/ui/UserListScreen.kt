@@ -2,7 +2,6 @@ package com.biliflow.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -20,10 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +57,7 @@ fun UserListScreen(
     var fans by remember(mode) { mutableStateOf<List<FanItem>>(emptyList()) }
     var page by remember(mode) { mutableIntStateOf(1) }
     var loading by remember(mode) { mutableStateOf(true) }
+    var loadingMore by remember(mode) { mutableStateOf(false) }
     var end by remember(mode) { mutableStateOf(false) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -80,40 +81,44 @@ fun UserListScreen(
             .background(appBackground())
             .screenEnter()
             .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
-        Row(
-            Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                Modifier.size(42.dp).noRippleClickable { onBack() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "返回", tint = appText())
-            }
-            Text(
-                text = if (mode == 2) "粉丝" else "关注",
-                color = appText(),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+        AppPageHeader(
+            title = if (mode == 2) "粉丝" else "关注",
+            subtitle = when {
+                loading -> "正在同步列表"
+                mode == 2 -> "${fans.size} 位粉丝"
+                else -> "${users.size} 个关注"
+            },
+            onBack = onBack
+        )
 
         if (loading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = BiliAccent, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = BiliAccent, strokeWidth = 2.dp, modifier = Modifier.size(26.dp))
             }
             return@Column
         }
 
-        LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)
+        ) {
             if (mode == 2) {
                 items(fans, key = { it.mid }) { fan ->
-                    UserRow(fan.mid, fan.name, fan.face, fan.sign, modifier = Modifier.animateItem()) { onOpenSpace(fan.mid) }
-                    HorizontalDivider(color = appDivider(), modifier = Modifier.padding(start = 68.dp))
+                    UserRow(
+                        fan.mid, fan.name, fan.face, fan.sign.ifBlank { "这位用户很神秘" },
+                        modifier = Modifier.animateItem().padding(vertical = 4.dp)
+                    ) { onOpenSpace(fan.mid) }
                 }
                 if (fans.isEmpty()) {
-                    item { EmptyLine("还没有粉丝") }
+                    item {
+                        AppEmptyState(
+                            title = "还没有粉丝",
+                            description = "新的关注者会出现在这里",
+                            modifier = Modifier.fillParentMaxHeight(0.72f)
+                        )
+                    }
                 }
             } else {
                 items(users, key = { it.mid }) { user ->
@@ -121,34 +126,49 @@ fun UserListScreen(
                         user.mid,
                         user.name,
                         user.face,
-                        if (user.mutual) "互相关注" else "",
-                        modifier = Modifier.animateItem()
+                        if (user.mutual) "互相关注" else "前往 TA 的主页",
+                        emphasized = user.mutual,
+                        modifier = Modifier.animateItem().padding(vertical = 4.dp)
                     ) { onOpenSpace(user.mid) }
-                    HorizontalDivider(color = appDivider(), modifier = Modifier.padding(start = 68.dp))
                 }
                 if (users.isEmpty()) {
-                    item { EmptyLine("还没有关注的人") }
+                    item {
+                        AppEmptyState(
+                            title = "还没有关注的人",
+                            description = "发现感兴趣的用户后，可以在这里快速找到 TA",
+                            modifier = Modifier.fillParentMaxHeight(0.72f)
+                        )
+                    }
                 }
                 if (!end && users.isNotEmpty()) {
                     item {
-                        Text(
-                            text = "加载更多",
-                            color = appTextMuted(),
-                            fontSize = 12.sp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .noRippleClickable {
-                                    scope.launch {
-                                        val next = page + 1
-                                        val more = runCatching { BiliApi.followings(AuthManager.mid, next) }
-                                            .getOrDefault(emptyList())
-                                        if (more.isEmpty()) end = true else {
-                                            users = users + more
-                                            page = next
-                                        }
+                        AppSecondaryButton(
+                            text = if (loadingMore) "正在加载…" else "加载更多",
+                            enabled = !loadingMore,
+                            onClick = {
+                                if (loadingMore) return@AppSecondaryButton
+                                scope.launch {
+                                    loadingMore = true
+                                    val next = page + 1
+                                    val more = runCatching { BiliApi.followings(AuthManager.mid, next) }
+                                        .getOrDefault(emptyList())
+                                    if (more.isEmpty()) end = true else {
+                                        users = users + more
+                                        page = next
                                     }
+                                    loadingMore = false
                                 }
-                                .padding(vertical = 14.dp),
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                        )
+                    }
+                } else if (end && users.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "已经到底啦",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = appTextMuted(),
+                            modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
@@ -165,49 +185,55 @@ private fun UserRow(
     face: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
     onClick: () -> Unit
 ) {
     Row(
         modifier
             .fillMaxWidth()
-            .pressClickable(pressedScale = 0.98f) { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .background(appSurfaceRaised())
+            .pressClickable(pressedScale = 0.97f) { onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             Modifier
-                .size(44.dp)
+                .size(52.dp)
                 .clip(CircleShape)
-                .background(if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFEDEDEF))
+                .background(appChip())
         ) {
             RemoteImage(
                 url = face,
                 contentDescription = name,
                 modifier = Modifier.fillMaxSize(),
-                targetWidth = 120
+                targetWidth = 160
             )
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 text = name.ifBlank { "用户 $mid" },
+                style = MaterialTheme.typography.titleSmall,
                 color = appText(),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            if (subtitle.isNotBlank()) {
-                Spacer(Modifier.height(2.dp))
-                Text(subtitle, color = appTextMuted(), fontSize = 11.sp)
-            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (emphasized) BiliAccent else appTextMuted(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
-    }
-}
-
-@Composable
-private fun EmptyLine(text: String) {
-    Box(Modifier.fillMaxWidth().padding(vertical = 60.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = appTextMuted(), fontSize = 13.sp)
+        Spacer(Modifier.width(8.dp))
+        Icon(
+            imageVector = Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = appTextMuted(),
+            modifier = Modifier.size(22.dp)
+        )
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +17,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -186,134 +197,229 @@ fun LoginSheet(onDismiss: () -> Unit) {
     ) {
         val enter = remember { Animatable(0f) }
         LaunchedEffect(Unit) {
-            enter.animateTo(1f, tween(260, easing = FastOutSlowInEasing))
+            enter.animateTo(1f, BiliMotion.TransitionEnter)
         }
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.68f * enter.value))
-                .padding(22.dp),
+                .background(Color.Black.copy(alpha = 0.56f * enter.value))
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(20.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
+                    .widthIn(max = 440.dp)
                     .fillMaxWidth()
                     .graphicsLayer {
                         alpha = enter.value
-                        val scale = 0.92f + 0.08f * enter.value
+                        val scale = 0.96f + 0.04f * enter.value
                         scaleX = scale
                         scaleY = scale
-                        translationY = (1f - enter.value) * 48f
+                        translationY = (1f - enter.value) * 32f
                     }
-                    .clip(RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(28.dp))
                     .background(appSurface())
-                    .padding(horizontal = 22.dp, vertical = 22.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
             ) {
-                Text("登录哔哩哔哩", color = appText(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "登录后可同步点赞、收藏、关注、投币、评论与弹幕",
-                    color = appTextMuted(),
-                    fontSize = 11.sp
-                )
-                Spacer(Modifier.height(16.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    LoginTab("手机号登录", mode == 0) { mode = 0 }
-                    LoginTab("扫码登录", mode == 1) { mode = 1 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "登录哔哩哔哩",
+                            color = appText(),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(5.dp))
+                        Text(
+                            "同步点赞、收藏、关注、投币、评论与弹幕",
+                            color = appTextMuted(),
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp
+                        )
+                    }
+                    AppIconButton(Icons.Filled.Close, "关闭登录", onDismiss)
                 }
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(appField())
+                        .padding(4.dp)
+                ) {
+                    LoginTab("手机号登录", mode == 0, { mode = 0 }, Modifier.weight(1f))
+                    LoginTab("扫码登录", mode == 1, { mode = 1 }, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(20.dp))
 
                 Crossfade(
                     targetState = mode,
-                    animationSpec = tween(220),
-                    label = "loginMode"
+                    animationSpec = tween(200),
+                    label = "loginMode",
+                    modifier = Modifier.fillMaxWidth()
                 ) { currentMode ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (currentMode == 0) {
-                    Text(
-                        "手机号 + 短信验证码登录",
-                        color = appText(),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "B 站短信接口启用了极验风控，将由官方安全页完成手机号与验证码校验，登录成功后自动返回。",
-                        color = appTextMuted(),
-                        fontSize = 11.sp,
-                        lineHeight = 17.sp
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(46.dp)
-                            .clip(RoundedCornerShape(23.dp))
-                            .background(BiliAccent)
-                            .pressClickable(pressedScale = 0.96f) { tip = ""; showWeb = true },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("打开安全登录页", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    }
-                    if (tip.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(tip, color = appTextMuted(), fontSize = 11.sp)
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(232.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val image = bitmap
-                        if (image != null) {
-                            Image(
-                                bitmap = image.asImageBitmap(),
-                                contentDescription = "登录二维码",
-                                modifier = Modifier.fillMaxSize().padding(10.dp)
+                        Column(Modifier.fillMaxWidth()) {
+                            Text(
+                                "手机号 + 短信验证码",
+                                color = appText(),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
-                        } else {
-                            CircularProgressIndicator(color = BiliAccent, strokeWidth = 2.dp)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "在哔哩哔哩官方安全页完成验证，登录成功后自动返回。",
+                                color = appTextMuted(),
+                                fontSize = 13.sp,
+                                lineHeight = 20.sp
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(appSurfaceRaised())
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(appAccentSoft()),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Lock,
+                                        contentDescription = null,
+                                        tint = BiliAccent,
+                                        modifier = Modifier.size(19.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    "手机号与验证码仅交由官方页面校验，应用不会获取你的密码。",
+                                    color = appTextMuted(),
+                                    fontSize = 12.sp,
+                                    lineHeight = 18.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            Spacer(Modifier.height(18.dp))
+                            AppPrimaryButton(
+                                text = "打开官方安全登录页",
+                                onClick = { tip = ""; showWeb = true },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (tip.isNotBlank()) {
+                                Spacer(Modifier.height(10.dp))
+                                Text(tip, color = appTextMuted(), fontSize = 12.sp, lineHeight = 18.sp)
+                            }
+                        }
+                    } else {
+                        val refreshing = status == "正在生成二维码"
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(appSurfaceRaised())
+                                .border(1.dp, appDivider(), RoundedCornerShape(16.dp))
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(224.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color.White),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val image = bitmap
+                                if (image != null) {
+                                    Image(
+                                        bitmap = image.asImageBitmap(),
+                                        contentDescription = "登录二维码",
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(12.dp)
+                                            .graphicsLayer {
+                                                alpha = if (status == "二维码已过期") 0.28f else 1f
+                                            }
+                                    )
+                                } else if (refreshing) {
+                                    CircularProgressIndicator(color = BiliAccent, strokeWidth = 2.dp)
+                                } else {
+                                    Text("二维码暂不可用", color = Color(0xFF747984), fontSize = 12.sp)
+                                }
+                            }
+                            Spacer(Modifier.height(14.dp))
+                            Text(
+                                text = status,
+                                color = if (error == null) appText() else MaterialTheme.colorScheme.error,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            if (error != null) {
+                                Spacer(Modifier.height(5.dp))
+                                Text(
+                                    error.orEmpty(),
+                                    color = appTextMuted(),
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp,
+                                    maxLines = 3
+                                )
+                            }
+                            Spacer(Modifier.height(14.dp))
+                            AppSecondaryButton(
+                                text = if (refreshing) "正在生成…" else "刷新二维码",
+                                onClick = { refreshToken++ },
+                                enabled = !refreshing,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
-                    Spacer(Modifier.height(14.dp))
-                    Text(
-                        text = status,
-                        color = if (error == null) appText() else Color(0xFFFF8A9D),
-                        fontSize = 13.sp
-                    )
-                    if (error != null) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(error.orEmpty(), color = appTextMuted(), fontSize = 10.sp, maxLines = 3)
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    TextButton(onClick = { refreshToken++ }) {
-                        Text("刷新二维码", color = BiliAccent)
-                    }
-                    }
-                }
                 }
 
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onDismiss) { Text("关闭", color = appTextMuted()) }
-                Text(
-                    "不会获取你的密码；登录 Cookie 仅保存在本机",
-                    color = appTextMuted().copy(alpha = 0.6f),
-                    fontSize = 9.sp
-                )
+                Spacer(Modifier.height(18.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Filled.Lock,
+                        contentDescription = null,
+                        tint = appTextMuted(),
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "登录 Cookie 仅保存在本机",
+                        color = appTextMuted(),
+                        fontSize = 11.sp
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LoginTab(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun LoginTab(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val background by animateColorAsState(
-        targetValue = if (selected) appChip() else Color.Transparent,
+        targetValue = if (selected) appSurfaceRaised() else Color.Transparent,
         animationSpec = tween(180),
         label = "loginTabBackground"
     )
@@ -322,17 +428,21 @@ private fun LoginTab(label: String, selected: Boolean, onClick: () -> Unit) {
         animationSpec = tween(180),
         label = "loginTabText"
     )
-    Text(
-        text = label,
-        color = textColor,
-        fontSize = 13.sp,
-        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-        modifier = Modifier
-            .clip(RoundedCornerShape(15.dp))
+    Box(
+        modifier = modifier
+            .height(44.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(background)
-            .pressClickable(pressedScale = 0.92f) { onClick() }
-            .padding(horizontal = 14.dp, vertical = 7.dp)
-    )
+            .pressClickable(pressedScale = 0.97f) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = textColor,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+        )
+    }
 }
 
 private fun createQrBitmap(content: String, size: Int): Bitmap? {

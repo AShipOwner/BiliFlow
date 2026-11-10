@@ -89,6 +89,8 @@ enum class HomeTab { LIVE, MALL, FOLLOW, RECOMMEND }
 @Composable
 fun HomeScreen(
     viewModel: FeedViewModel,
+    homeTab: HomeTab,
+    onHomeTabChange: (HomeTab) -> Unit,
     onSearch: () -> Unit,
     onOpenLive: (LiveRoom) -> Unit,
     onOpenSpace: (Long) -> Unit = {}
@@ -97,7 +99,6 @@ fun HomeScreen(
     val loggedIn = authState is AuthState.LoggedIn
     val danmakuEnabled by LocalStore.danmakuEnabled.collectAsStateCompat()
 
-    var homeTab by rememberSaveable { mutableStateOf(HomeTab.RECOMMEND) }
     var commentItem by remember { mutableStateOf<VideoItem?>(null) }
     var coinItem by remember { mutableStateOf<VideoItem?>(null) }
     val context = LocalContext.current
@@ -115,7 +116,7 @@ fun HomeScreen(
         UiMessages.show(if (next) "弹幕已开启" else "弹幕已关闭")
     }
 
-    Box(Modifier.fillMaxSize().background(BiliBackground)) {
+    Box(Modifier.fillMaxSize().background(if (isVideoTab) BiliBackground else appBackground())) {
         AnimatedContent(
             targetState = homeTab,
             transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
@@ -166,8 +167,9 @@ fun HomeScreen(
 
         HomeTopBar(
             selected = homeTab,
-            onSelect = { homeTab = it },
-            onSearch = onSearch
+            onSelect = onHomeTabChange,
+            onSearch = onSearch,
+            immersive = isVideoTab
         )
     }
 
@@ -203,18 +205,25 @@ fun HomeScreen(
 private fun HomeTopBar(
     selected: HomeTab,
     onSelect: (HomeTab) -> Unit,
-    onSearch: () -> Unit
+    onSearch: () -> Unit,
+    immersive: Boolean
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color.Black.copy(alpha = 0.72f), Color.Transparent)
-                )
+            .then(
+                if (immersive) {
+                    Modifier.background(
+                        Brush.verticalGradient(
+                            listOf(Color.Black.copy(alpha = 0.66f), Color.Transparent)
+                        )
+                    )
+                } else {
+                    Modifier.background(appBackground())
+                }
             )
             .statusBarsPadding()
-            .height(52.dp)
+            .height(60.dp)
             .padding(horizontal = 10.dp)
     ) {
         val centers = remember { mutableStateMapOf<HomeTab, Float>() }
@@ -229,16 +238,16 @@ private fun HomeTopBar(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FeedTab("直播", selected == HomeTab.LIVE, { onSelect(HomeTab.LIVE) }) {
+                FeedTab("直播", selected == HomeTab.LIVE, { onSelect(HomeTab.LIVE) }, immersive) {
                     centers[HomeTab.LIVE] = it
                 }
-                FeedTab("商城", selected == HomeTab.MALL, { onSelect(HomeTab.MALL) }) {
+                FeedTab("商城", selected == HomeTab.MALL, { onSelect(HomeTab.MALL) }, immersive) {
                     centers[HomeTab.MALL] = it
                 }
-                FeedTab("关注", selected == HomeTab.FOLLOW, { onSelect(HomeTab.FOLLOW) }) {
+                FeedTab("关注", selected == HomeTab.FOLLOW, { onSelect(HomeTab.FOLLOW) }, immersive) {
                     centers[HomeTab.FOLLOW] = it
                 }
-                FeedTab("推荐", selected == HomeTab.RECOMMEND, { onSelect(HomeTab.RECOMMEND) }) {
+                FeedTab("推荐", selected == HomeTab.RECOMMEND, { onSelect(HomeTab.RECOMMEND) }, immersive) {
                     centers[HomeTab.RECOMMEND] = it
                 }
             }
@@ -247,9 +256,9 @@ private fun HomeTopBar(
                     Modifier
                         .align(Alignment.BottomStart)
                         .offset { IntOffset((indicatorX - 9.dp.toPx()).roundToInt(), 0) }
-                        .width(18.dp)
-                        .height(2.dp)
-                        .background(Color.White, CircleShape)
+                        .width(20.dp)
+                        .height(3.dp)
+                        .background(if (immersive) Color.White else BiliAccent, CircleShape)
                 )
             }
         }
@@ -258,14 +267,16 @@ private fun HomeTopBar(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(40.dp)
-                .pressClickable(pressedScale = 0.85f) { onSearch() },
+                .clip(CircleShape)
+                .background(if (immersive) Color.White.copy(alpha = 0.10f) else appField())
+                .pressClickable(pressedScale = 0.94f) { onSearch() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Filled.Search,
                 contentDescription = "搜索",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
+                tint = if (immersive) Color.White else appText(),
+                modifier = Modifier.size(22.dp)
             )
         }
     }
@@ -276,10 +287,16 @@ private fun FeedTab(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    immersive: Boolean,
     onCenter: (Float) -> Unit = {}
 ) {
     val color by animateColorAsState(
-        targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.55f),
+        targetValue = when {
+            selected && immersive -> Color.White
+            selected -> appText()
+            immersive -> Color.White.copy(alpha = 0.58f)
+            else -> appTextMuted()
+        },
         animationSpec = tween(180),
         label = "tabColor"
     )
@@ -295,8 +312,8 @@ private fun FeedTab(
         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
         modifier = Modifier
             .onGloballyPositioned { onCenter(it.positionInParent().x + it.size.width / 2f) }
-            .pressClickable(pressedScale = 0.92f) { onClick() }
-            .padding(bottom = 6.dp)
+            .pressClickable(pressedScale = 0.96f) { onClick() }
+            .padding(bottom = 7.dp)
     )
 }
 
@@ -305,57 +322,51 @@ private fun FeedLoginPrompt() {
     Box(
         Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF101010), Color.Black, Color(0xFF0A0A0A))
-                )
-            )
-            .padding(top = 96.dp, start = 32.dp, end = 32.dp),
+            .background(BiliBackground)
+            .padding(top = 80.dp, bottom = 64.dp, start = 32.dp, end = 32.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(72.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.08f)),
+                    .background(BiliAccent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Filled.Person,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier.size(30.dp)
+                    tint = BiliAccent,
+                    modifier = Modifier.size(32.dp)
                 )
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
             Text(
-                text = "登录后查看关注动态",
+                text = "看见你关注的新动态",
                 color = Color.White,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
-                text = "同步关注、点赞、收藏、投币与弹幕",
-                color = BiliMuted,
-                fontSize = 12.sp
+                text = "登录后同步关注、点赞、收藏和弹幕",
+                color = Color.White.copy(alpha = 0.58f),
+                fontSize = 13.sp
             )
-            Spacer(Modifier.height(18.dp))
-            Button(
-                onClick = { LoginPrompt.show() },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BiliAccent,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(22.dp)
-            ) {
-                Text("扫码登录")
-            }
+            Spacer(Modifier.height(24.dp))
+            AppPrimaryButton(text = "登录并同步", onClick = { LoginPrompt.show() })
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "支持扫码和官方网页安全登录",
+                color = Color.White.copy(alpha = 0.38f),
+                fontSize = 11.sp
+            )
         }
     }
 }
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun FeedPager(
     source: FeedSource,
@@ -745,48 +756,45 @@ private fun FeedStatus(state: FeedState, onRetry: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF101010), Color.Black, Color(0xFF0A0A0A))
-                )
-            )
-            .padding(top = 96.dp, start = 32.dp, end = 32.dp),
+            .background(BiliBackground)
+            .padding(top = 80.dp, bottom = 64.dp, start = 32.dp, end = 32.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (state.loading) {
                 LoadingDots()
-                Spacer(Modifier.height(16.dp))
-                Text("正在加载视频", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+                Spacer(Modifier.height(18.dp))
+                Text("正在为你挑选视频", color = Color.White.copy(alpha = 0.64f), fontSize = 13.sp)
             } else {
-                Icon(
-                    imageVector = Icons.Filled.Refresh,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.8f)
-                )
-                Spacer(Modifier.height(12.dp))
+                Box(
+                    Modifier
+                        .size(64.dp)
+                        .background(BiliAccent.copy(alpha = 0.13f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = null,
+                        tint = BiliAccent,
+                        modifier = Modifier.size(27.dp)
+                    )
+                }
+                Spacer(Modifier.height(18.dp))
                 Text(
-                    text = if (state.error != null) "加载失败" else "暂无内容",
+                    text = if (state.error != null) "视频暂时没有加载出来" else "这里还没有内容",
                     color = Color.White,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    text = state.error ?: "换一个 Tab 试试，或稍后再来",
+                    text = state.error ?: "切换其他频道，或稍后再来看看",
                     color = Color.White.copy(alpha = 0.55f),
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp
                 )
-                Spacer(Modifier.height(18.dp))
-                Button(
-                    onClick = onRetry,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BiliAccent,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("重试")
-                }
+                Spacer(Modifier.height(20.dp))
+                AppPrimaryButton(text = "重新加载", onClick = onRetry)
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -37,7 +39,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -312,7 +314,8 @@ fun CommentsSheet(
         sheetState = sheetState,
         containerColor = appSurface(),
         contentColor = appText(),
-        dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFF4A4A4A)) }
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = appDivider()) }
     ) {
         Column(
             modifier = Modifier
@@ -324,15 +327,15 @@ fun CommentsSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = if (total > 0L) "评论 ${formatCount(total)}" else "评论",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(Modifier.width(14.dp))
                 SortChip("热门", sort == 2) { sort = 2 }
                 Spacer(Modifier.width(8.dp))
                 SortChip("最新", sort == 0) { sort = 0 }
@@ -347,33 +350,18 @@ fun CommentsSheet(
                 }
 
                 error != null -> {
-                    Column(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text("评论加载失败", color = appText(), fontSize = 15.sp)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = error.orEmpty(),
-                            color = appTextMuted(),
-                            fontSize = 11.sp,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(horizontal = 32.dp)
-                        )
-                        TextButton(onClick = { reloadToken++ }) {
-                            Text("重试", color = BiliAccent)
-                        }
+                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        AppErrorState(message = error.orEmpty(), onRetry = { reloadToken++ })
                     }
                 }
 
                 comments.isEmpty() && topComments.isEmpty() -> {
                     Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = if (loggedIn) "还没有评论，来抢沙发" else "登录后查看并参与评论",
-                            color = appTextMuted(),
-                            fontSize = 13.sp
+                        AppEmptyState(
+                            title = if (loggedIn) "还没有评论" else "登录后查看并参与评论",
+                            description = if (loggedIn) "说点什么，成为第一个评论的人" else "登录后可以点赞、回复和发送表情",
+                            actionLabel = if (loggedIn) null else "去登录",
+                            onAction = { LoginPrompt.show() }
                         )
                     }
                 }
@@ -498,9 +486,9 @@ fun CommentsSheet(
                     RemoteImage(
                         url = account?.face.orEmpty(),
                         contentDescription = account?.name.orEmpty(),
-                        modifier = Modifier.size(30.dp).clip(CircleShape),
+                        modifier = Modifier.size(32.dp).clip(CircleShape),
                         targetWidth = 96,
-                        placeholder = Color(0xFF2A2A2A)
+                        placeholder = appField()
                     )
                     Spacer(Modifier.width(8.dp))
                     BasicTextField(
@@ -510,8 +498,8 @@ fun CommentsSheet(
                             .weight(1f)
                             .clip(RoundedCornerShape(18.dp))
                             .background(appField())
-                            .padding(horizontal = 12.dp, vertical = 9.dp),
-                        textStyle = TextStyle(color = appText(), fontSize = 13.sp),
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        textStyle = TextStyle(color = appText(), fontSize = 14.sp),
                         cursorBrush = SolidColor(BiliAccent),
                         maxLines = 4,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -521,7 +509,7 @@ fun CommentsSheet(
                                     Text(
                                         text = if (replyTarget == null) "发一条友善的评论" else "回复 @${replyTarget?.userName}",
                                         color = appTextMuted(),
-                                        fontSize = 13.sp
+                                        fontSize = 14.sp
                                     )
                                 }
                                 inner()
@@ -529,31 +517,32 @@ fun CommentsSheet(
                         }
                     )
                     Spacer(Modifier.width(6.dp))
+                    val sendActive = input.isNotBlank() && !sending
                     val sendBackground by animateColorAsState(
-                        targetValue = if (sending) appChip() else BiliAccent,
-                        animationSpec = tween(200),
+                        targetValue = if (sendActive) BiliAccent else appChip(),
+                        animationSpec = tween(180),
                         label = "sendBackground"
                     )
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
                             .background(sendBackground)
-                            .pressClickable(enabled = !sending, pressedScale = 0.85f) { sendComment() },
+                            .pressClickable(enabled = sendActive, pressedScale = 0.94f) { sendComment() },
                         contentAlignment = Alignment.Center
                     ) {
                         if (sending) {
                             CircularProgressIndicator(
-                                color = appText(),
+                                color = appTextMuted(),
                                 strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(17.dp)
                             )
                         } else {
                             Icon(
-                                imageVector = Icons.Filled.Send,
-                                contentDescription = "发送",
-                                tint = appText(),
-                                modifier = Modifier.size(18.dp)
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "发送评论",
+                                tint = if (sendActive) Color.White else appTextMuted(),
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                     }
@@ -563,10 +552,10 @@ fun CommentsSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(22.dp))
+                        .clip(RoundedCornerShape(18.dp))
                         .background(appField())
-                        .noRippleClickable { LoginPrompt.show() }
-                        .padding(horizontal = 14.dp, vertical = 11.dp),
+                        .pressClickable(pressedScale = 0.97f) { LoginPrompt.show() }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -616,12 +605,12 @@ fun CommentsSheet(
 @Composable
 private fun SortChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val background by animateColorAsState(
-        targetValue = if (selected) appText().copy(alpha = 0.12f) else Color.Transparent,
+        targetValue = if (selected) appAccentSoft() else Color.Transparent,
         animationSpec = tween(180),
         label = "sortBackground"
     )
     val textColor by animateColorAsState(
-        targetValue = if (selected) appText() else appTextMuted(),
+        targetValue = if (selected) BiliAccent else appTextMuted(),
         animationSpec = tween(180),
         label = "sortText"
     )
@@ -631,10 +620,10 @@ private fun SortChip(label: String, selected: Boolean, onClick: () -> Unit) {
         fontSize = 12.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(background)
-            .pressClickable(pressedScale = 0.9f) { onClick() }
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .pressClickable(pressedScale = 0.96f) { onClick() }
+            .padding(horizontal = 11.dp, vertical = 6.dp)
     )
 }
 
@@ -695,7 +684,7 @@ private fun CommentThread(
             enter = expandVertically(tween(220)) + fadeIn(tween(220)),
             exit = shrinkVertically(tween(160)) + fadeOut(tween(140))
         ) {
-            Column(Modifier.padding(start = 46.dp)) {
+            Column(Modifier.padding(start = 52.dp)) {
                 replies.forEach { reply ->
                     CommentRow(
                         comment = reply,
@@ -739,7 +728,7 @@ private fun CommentThread(
             TextButton(
                 onClick = { onLoadReplies(true) },
                 enabled = !replyLoading,
-                modifier = Modifier.padding(start = 42.dp)
+                modifier = Modifier.padding(start = 52.dp)
             ) {
                 if (replyLoading) {
                     CircularProgressIndicator(
@@ -775,29 +764,30 @@ private fun CommentRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                start = if (isReply) 4.dp else 16.dp,
-                end = 14.dp,
-                top = 8.dp,
-                bottom = 8.dp
+                start = if (isReply) 0.dp else 20.dp,
+                end = 16.dp,
+                top = 10.dp,
+                bottom = 10.dp
             )
     ) {
         RemoteImage(
             url = comment.avatar,
             contentDescription = comment.userName,
             modifier = Modifier
-                .size(if (isReply) 28.dp else 36.dp)
+                .size(if (isReply) 30.dp else 40.dp)
                 .clip(CircleShape)
-                .noRippleClickable { onAvatarClick() },
+                .pressClickable(pressedScale = 0.95f) { onAvatarClick() },
             targetWidth = 96,
-            placeholder = Color(0xFF2A2A2A)
+            placeholder = appField()
         )
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = comment.userName,
-                    color = if (isUp) BiliAccent else appTextMuted(),
-                    fontSize = if (isReply) 11.sp else 12.sp,
+                    color = if (isUp) BiliAccent else appText(),
+                    fontSize = if (isReply) 12.sp else 13.sp,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
@@ -808,11 +798,11 @@ private fun CommentRow(
                 }
                 if (isTop) {
                     Spacer(Modifier.width(4.dp))
-                    MiniBadge("置顶", Color(0xFF8A8A8A))
+                    MiniBadge("置顶", appTextMuted())
                 }
                 if (comment.isUpLiked) {
                     Spacer(Modifier.width(4.dp))
-                    MiniBadge("UP主赞", Color(0xFF8A8A8A))
+                    MiniBadge("UP主赞", appTextMuted())
                 }
             }
             Spacer(Modifier.height(3.dp))
@@ -822,22 +812,26 @@ private fun CommentRow(
                 Text(
                     text = formatTimeAgo(comment.ctime),
                     color = appTextMuted(),
-                    fontSize = 10.sp
+                    fontSize = 11.sp
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = "回复",
                     color = appTextMuted(),
-                    fontSize = 10.sp,
-                    modifier = Modifier.noRippleClickable { onReply() }
+                    fontSize = 11.sp,
+                    modifier = Modifier
+                        .pressClickable(pressedScale = 0.96f) { onReply() }
+                        .padding(vertical = 3.dp)
                 )
                 if (canDelete) {
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = "删除",
                         color = appTextMuted(),
-                        fontSize = 10.sp,
-                        modifier = Modifier.noRippleClickable { onDelete() }
+                        fontSize = 11.sp,
+                        modifier = Modifier
+                            .pressClickable(pressedScale = 0.96f) { onDelete() }
+                            .padding(vertical = 3.dp)
                     )
                 }
             }
@@ -850,22 +844,27 @@ private fun CommentRow(
             label = "commentLikeTint"
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = if (comment.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                contentDescription = "点赞评论",
-                tint = likeTint,
-                modifier = Modifier
-                    .size(16.dp)
-                    .graphicsLayer {
-                        scaleX = likePop
-                        scaleY = likePop
-                    }
-                    .pressClickable(pressedScale = 0.8f) { onLike() }
-            )
-            Spacer(Modifier.height(2.dp))
+            Box(
+                Modifier
+                    .size(32.dp)
+                    .pressClickable(pressedScale = 0.9f) { onLike() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (comment.liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = if (comment.liked) "取消点赞评论" else "点赞评论",
+                    tint = likeTint,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .graphicsLayer {
+                            scaleX = likePop
+                            scaleY = likePop
+                        }
+                )
+            }
             AnimatedSwapText(
                 text = formatCount(comment.like),
-                style = TextStyle(color = appTextMuted(), fontSize = 9.sp)
+                style = TextStyle(color = appTextMuted(), fontSize = 10.sp)
             )
         }
     }
@@ -882,7 +881,7 @@ private fun CommentBody(comment: CommentItem, isReply: Boolean) {
                 text = comment.content,
                 color = textColor,
                 fontSize = fontSize,
-                lineHeight = 20.sp,
+                lineHeight = 22.sp,
                 maxLines = 10,
                 overflow = TextOverflow.Ellipsis
             )
@@ -929,7 +928,7 @@ private fun CommentBody(comment: CommentItem, isReply: Boolean) {
                 inlineContent = inlineContent,
                 color = textColor,
                 fontSize = fontSize,
-                lineHeight = 20.sp,
+                lineHeight = 22.sp,
                 maxLines = 10,
                 overflow = TextOverflow.Ellipsis
             )
@@ -942,7 +941,7 @@ private fun CommentBody(comment: CommentItem, isReply: Boolean) {
 private fun CommentPictures(pictures: List<CommentPicture>) {
     if (pictures.isEmpty()) return
     val context = LocalContext.current
-    val placeholder = if (LocalAppDark.current) Color(0xFF1F1F23) else Color(0xFFF1F1F3)
+    val placeholder = appField()
     Spacer(Modifier.height(6.dp))
     if (pictures.size == 1) {
         val pic = pictures[0]
@@ -953,9 +952,9 @@ private fun CommentPictures(pictures: List<CommentPicture>) {
         }
         Box(
             Modifier
-                .width(170.dp)
+                .width(180.dp)
                 .aspectRatio(ratio)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .pressClickable(pressedScale = 0.98f) { openUrl(context, pic.url) }
         ) {
             RemoteImage(
@@ -967,12 +966,12 @@ private fun CommentPictures(pictures: List<CommentPicture>) {
             )
         }
     } else {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             pictures.take(3).forEachIndexed { index, pic ->
                 Box(
                     Modifier
-                        .size(84.dp)
-                        .clip(RoundedCornerShape(6.dp))
+                        .size(88.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .pressClickable(pressedScale = 0.95f) { openUrl(context, pic.url) }
                 ) {
                     RemoteImage(
@@ -1006,11 +1005,11 @@ private fun MiniBadge(text: String, color: Color) {
     Text(
         text = text,
         color = color,
-        fontSize = 8.sp,
+        fontSize = 9.sp,
         modifier = Modifier
-            .clip(RoundedCornerShape(3.dp))
+            .clip(RoundedCornerShape(5.dp))
             .background(color.copy(alpha = 0.12f))
-            .padding(horizontal = 4.dp, vertical = 1.dp)
+            .padding(horizontal = 5.dp, vertical = 2.dp)
     )
 }
 

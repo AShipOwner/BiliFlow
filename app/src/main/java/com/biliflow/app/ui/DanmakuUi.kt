@@ -8,12 +8,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -189,100 +195,118 @@ fun DanmakuBar(
         label = "danmakuBar"
     ) { isExpanded ->
         if (isExpanded) {
-        Row(
-            modifier = modifier
-                .imePadding()
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .background(Color.Black.copy(alpha = 0.58f))
-                .padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BasicTextField(
-                value = input,
-                onValueChange = { input = it.take(100) },
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester),
-                singleLine = true,
-                textStyle = TextStyle(color = Color.White, fontSize = 12.sp),
-                cursorBrush = SolidColor(BiliAccent),
-                decorationBox = { inner ->
-                    Box {
-                        if (input.isEmpty()) {
-                            Text(
-                                text = "发个弹幕见证当下",
-                                color = Color.White.copy(alpha = 0.55f),
-                                fontSize = 12.sp
-                            )
-                        }
-                        inner()
-                    }
-                }
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "发送",
-                color = BiliAccent,
-                fontSize = 12.sp,
-                modifier = Modifier.pressClickable(pressedScale = 0.88f) {
-                    val text = input.trim()
-                    if (text.isNotBlank()) {
-                        onSend(text)
-                        input = ""
-                        expanded = false
-                        focusManager.clearFocus()
-                        keyboard?.hide()
-                    }
-                }
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                text = "×",
-                color = Color.White.copy(alpha = 0.65f),
-                fontSize = 16.sp,
-                modifier = Modifier.noRippleClickable {
-                    expanded = false
-                    focusManager.clearFocus()
-                    keyboard?.hide()
-                }
-            )
-        }
-        } else {
-        Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .size(26.dp)
-                    .clip(RoundedCornerShape(13.dp))
-                    .background(Color.Black.copy(alpha = 0.34f))
-                    .pressClickable(pressedScale = 0.82f) { onToggleDanmaku() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "弹",
-                    color = if (danmakuOn) Color.White else Color.White.copy(alpha = 0.4f),
-                    fontSize = 11.sp
-                )
-            }
-            Spacer(Modifier.width(6.dp))
             Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color.Black.copy(alpha = 0.34f))
-                    .pressClickable(pressedScale = 0.95f) {
-                        if (loggedIn) expanded = true else onRequireLogin()
-                    }
-                    .padding(horizontal = 13.dp, vertical = 7.dp),
+                modifier = modifier
+                    .imePadding()
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Black.copy(alpha = 0.72f))
+                    .padding(start = 16.dp, end = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "发个弹幕见证当下",
-                    color = Color.White.copy(alpha = 0.78f),
-                    fontSize = 11.sp
+                BasicTextField(
+                    value = input,
+                    onValueChange = { input = it.take(100) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester),
+                    singleLine = true,
+                    textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
+                    cursorBrush = SolidColor(BiliAccent),
+                    decorationBox = { inner ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (input.isEmpty()) {
+                                Text(
+                                    text = "发个弹幕见证当下",
+                                    color = Color.White.copy(alpha = 0.52f),
+                                    fontSize = 13.sp
+                                )
+                            }
+                            inner()
+                        }
+                    }
                 )
+                Spacer(Modifier.width(8.dp))
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(if (input.isBlank()) Color.White.copy(alpha = 0.12f) else BiliAccent)
+                        .pressClickable(enabled = input.isNotBlank(), pressedScale = 0.94f) {
+                            val text = input.trim()
+                            if (text.isNotBlank()) {
+                                onSend(text)
+                                input = ""
+                                expanded = false
+                                focusManager.clearFocus()
+                                keyboard?.hide()
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "发送弹幕",
+                        tint = if (input.isBlank()) Color.White.copy(alpha = 0.45f) else Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .pressClickable(pressedScale = 0.94f) {
+                            expanded = false
+                            focusManager.clearFocus()
+                            keyboard?.hide()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "收起弹幕输入",
+                        tint = Color.White.copy(alpha = 0.68f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
-        }
+        } else {
+            Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.48f))
+                        .pressClickable(pressedScale = 0.94f) { onToggleDanmaku() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "弹",
+                        color = if (danmakuOn) Color.White else Color.White.copy(alpha = 0.4f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Row(
+                    modifier = Modifier
+                        .height(36.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.Black.copy(alpha = 0.48f))
+                        .pressClickable(pressedScale = 0.96f) {
+                            if (loggedIn) expanded = true else onRequireLogin()
+                        }
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "发个弹幕见证当下",
+                        color = Color.White.copy(alpha = 0.82f),
+                        fontSize = 12.sp
+                    )
+                }
+            }
         }
     }
 }

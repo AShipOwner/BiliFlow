@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -78,28 +79,12 @@ fun FriendsScreen(
         if (!loggedIn) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "登录后查看朋友动态",
-                        color = appText(),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                    AppEmptyState(
+                        title = "登录后查看朋友动态",
+                        description = "互相关注与关注用户的视频更新会出现在这里",
+                        icon = Icons.Filled.People
                     )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = "互相关注与关注用户的视频更新",
-                        color = appTextMuted(),
-                        fontSize = 12.sp
-                    )
-                    Spacer(Modifier.height(18.dp))
-                    Button(
-                        onClick = { LoginPrompt.show() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = BiliAccent,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text("扫码登录")
-                    }
+                    AppPrimaryButton(text = "扫码登录", onClick = { LoginPrompt.show() })
                 }
             }
         } else {
@@ -116,36 +101,35 @@ fun FriendsScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Black.copy(alpha = 0.72f), Color.Transparent)
-                    )
+                .then(
+                    if (loggedIn) {
+                        Modifier.background(
+                            Brush.verticalGradient(
+                                listOf(Color.Black.copy(alpha = 0.62f), Color.Transparent)
+                            )
+                        )
+                    } else {
+                        Modifier.background(appBackground())
+                    }
                 )
                 .statusBarsPadding()
-                .height(52.dp)
-                .padding(horizontal = 14.dp)
+                .height(60.dp)
+                .padding(horizontal = 12.dp)
         ) {
             Text(
                 text = "朋友",
                 color = if (loggedIn) Color.White else appText(),
-                fontSize = 18.sp,
+                fontSize = 19.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.Center)
             )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(40.dp)
-                    .pressClickable(pressedScale = 0.85f) { onSearch() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = "搜索",
-                    tint = if (loggedIn) Color.White else appText(),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            AppIconButton(
+                Icons.Filled.Search,
+                "搜索",
+                onSearch,
+                modifier = Modifier.align(Alignment.CenterEnd),
+                tint = if (loggedIn) Color.White else appText()
+            )
         }
     }
 

@@ -81,6 +81,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -134,7 +135,8 @@ fun FeedPage(
     onBoost: (Boolean) -> Unit = {},
     onToggleDanmaku: () -> Unit = {},
     durationMs: Long = 0L,
-    onSeek: (Float) -> Unit = {}
+    onSeek: (Float) -> Unit = {},
+    chromeBottomPadding: Dp = 64.dp
 ) {
     val density = LocalDensity.current
     var hearts by remember { mutableStateOf<List<TapHeart>>(emptyList()) }
@@ -245,7 +247,6 @@ fun FeedPage(
             item = item,
             social = social,
             enabled = interactive,
-            playing = playerReady && !paused,
             onLike = onLike,
             onComment = onComment,
             onCoin = onCoin,
@@ -256,7 +257,7 @@ fun FeedPage(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(end = 10.dp, bottom = 100.dp)
+                .padding(end = 8.dp, bottom = chromeBottomPadding + 48.dp)
         )
 
         AnimatedVisibility(
@@ -266,10 +267,10 @@ fun FeedPage(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(top = 62.dp)
+                .padding(top = 114.dp)
         ) {
             Text(
-                text = "2.0x 倍速中",
+                text = "2.0× 播放中",
                 color = Color.White,
                 fontSize = 11.sp,
                 modifier = Modifier
@@ -280,12 +281,13 @@ fun FeedPage(
         }
 
         if (interactive) {
-            Column(
+            Row(
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 12.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(start = 12.dp, top = 66.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 PlayerSideTool(
                     label = if (speed == 1f) "倍速" else speedLabelOf(speed),
@@ -308,7 +310,7 @@ fun FeedPage(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .navigationBarsPadding()
-                .padding(start = 14.dp, end = 84.dp, bottom = 98.dp)
+                .padding(start = 16.dp, end = 82.dp, bottom = chromeBottomPadding + 48.dp)
         )
 
         if (interactive && recallAvailable) {
@@ -319,11 +321,11 @@ fun FeedPage(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
-                    .padding(top = 56.dp, end = 12.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .noRippleClickable { onRecall() }
-                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                    .padding(top = 112.dp, end = 12.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.Black.copy(alpha = 0.56f))
+                    .pressClickable(pressedScale = 0.95f) { onRecall() }
+                    .padding(horizontal = 12.dp, vertical = 7.dp)
             )
         }
 
@@ -338,7 +340,7 @@ fun FeedPage(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(bottom = 64.dp)
+                    .padding(bottom = chromeBottomPadding + 14.dp)
             )
         }
 
@@ -350,26 +352,26 @@ fun FeedPage(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(bottom = 45.dp)
+                    .padding(bottom = (chromeBottomPadding - 10.dp).coerceAtLeast(0.dp))
             )
         }
 
         AnimatedVisibility(
             visible = interactive && paused && playerReady && playerError == null,
-            enter = fadeIn(tween(150)) + scaleIn(tween(220, easing = FastOutSlowInEasing), initialScale = 0.7f),
+            enter = fadeIn(tween(150)) + scaleIn(tween(200, easing = FastOutSlowInEasing), initialScale = 0.86f),
             exit = fadeOut(tween(180)) + scaleOut(tween(180), targetScale = 0.85f),
             modifier = Modifier.align(Alignment.Center)
         ) {
             Box(
                 Modifier
-                    .size(72.dp)
+                    .size(64.dp)
                     .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.34f)),
+                    .background(Color.Black.copy(alpha = 0.44f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_pause),
-                    contentDescription = "暂停",
+                    contentDescription = "已暂停，点击继续播放",
                     tint = Color.White,
                     modifier = Modifier.size(30.dp)
                 )
@@ -398,8 +400,8 @@ fun FeedPage(
             Column(
                 modifier = Modifier
                     .padding(horizontal = 32.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.Black.copy(alpha = 0.62f))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Black.copy(alpha = 0.72f))
                     .padding(horizontal = 22.dp, vertical = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -424,15 +426,7 @@ fun FeedPage(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = onRetry,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BiliAccent,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("重试")
-                }
+                AppPrimaryButton(text = "重新播放", onClick = onRetry)
             }
         }
 
@@ -440,7 +434,7 @@ fun FeedPage(
             androidx.compose.runtime.key(heart.id) {
                 TapHeartView(
                     heart = heart,
-                    heartSizePx = with(density) { 108.dp.toPx() },
+                    heartSizePx = with(density) { 96.dp.toPx() },
                     onDone = { hearts = hearts.filterNot { it.id == heart.id } }
                 )
             }
@@ -466,9 +460,9 @@ private fun TapHeartView(
     val scale = remember { Animatable(0f) }
     LaunchedEffect(heart.id) {
         launch {
-            scale.animateTo(1f, spring(dampingRatio = 0.42f, stiffness = 380f))
+            scale.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = 420f))
         }
-        progress.animateTo(1f, tween(820, easing = LinearEasing))
+        progress.animateTo(1f, tween(760, easing = LinearEasing))
         onDone()
     }
     Icon(
@@ -482,7 +476,7 @@ private fun TapHeartView(
                     (heart.offset.y - heartSizePx / 2f - progress.value * heartSizePx * 0.55f).roundToInt()
                 )
             }
-            .size(108.dp)
+            .size(96.dp)
             .graphicsLayer {
                 val p = progress.value
                 val s = scale.value * heart.sizeScale
@@ -557,7 +551,7 @@ private fun SeekableProgressBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(22.dp)
+            .height(28.dp)
             .onSizeChanged { widthPx = it.width.toFloat() }
             .pointerInput(durationMs) {
                 if (durationMs <= 0L) return@pointerInput
@@ -598,7 +592,7 @@ private fun SeekableProgressBar(
                     .fillMaxWidth(shown)
                     .height(barHeight)
                     .clip(CircleShape)
-                    .background(if (dragging) BiliAccent else Color.White)
+                    .background(BiliAccent)
             )
         }
         if (dragging && widthPx > 0f) {
@@ -636,7 +630,6 @@ private fun ActionRail(
     item: VideoItem,
     social: SocialState,
     enabled: Boolean,
-    playing: Boolean,
     onLike: () -> Unit,
     onComment: () -> Unit,
     onCoin: () -> Unit,
@@ -668,9 +661,9 @@ private fun ActionRail(
     val coinCount = (item.coin + social.coinDelta).coerceAtLeast(0L)
 
     Column(
-        modifier = modifier.width(68.dp),
+        modifier = modifier.width(66.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Box(
             modifier = Modifier.size(54.dp),
@@ -680,10 +673,10 @@ private fun ActionRail(
                 url = item.ownerFace,
                 contentDescription = item.ownerName,
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.85f), CircleShape)
-                    .pressClickable(pressedScale = 0.92f) { android.util.Log.d("BiliFlow", "avatar tap mid=${item.ownerMid}"); onOpenOwner() },
+                    .border(1.5.dp, Color.White.copy(alpha = 0.88f), CircleShape)
+                    .pressClickable(pressedScale = 0.95f) { onOpenOwner() },
                 targetWidth = 96,
                 placeholder = Color(0xFF2A2A2A)
             )
@@ -691,10 +684,10 @@ private fun ActionRail(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset(y = 6.dp)
-                    .size(18.dp)
+                    .size(20.dp)
                     .clip(CircleShape)
                     .background(followBackground)
-                    .pressClickable(enabled = enabled, pressedScale = 0.8f) { onFollow() },
+                    .pressClickable(enabled = enabled, pressedScale = 0.9f) { onFollow() },
                 contentAlignment = Alignment.Center
             ) {
                 Crossfade(
@@ -792,8 +785,6 @@ private fun ActionRail(
                 modifier = Modifier.size(28.dp)
             )
         }
-
-        MusicDisc(item = item, spinning = playing)
     }
 }
 
@@ -808,10 +799,10 @@ private fun ActionButton(
     Column(
         modifier = modifier
             .width(64.dp)
-            .pressClickable(enabled = enabled, pressedScale = 0.88f) { onClick() },
+            .pressClickable(enabled = enabled, pressedScale = 0.94f) { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(Modifier.size(31.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
             icon()
         }
         Spacer(Modifier.height(2.dp))
@@ -819,11 +810,10 @@ private fun ActionButton(
             text = label,
             style = TextStyle(
                 color = Color.White,
-                fontSize = DouyinType.caption,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                fontFamily = DouyinNumber,
                 shadow = Shadow(
-                    color = Color.Black.copy(alpha = 0.7f),
+                    color = Color.Black.copy(alpha = 0.62f),
                     offset = Offset(0f, 1f),
                     blurRadius = 4f
                 )
@@ -833,46 +823,11 @@ private fun ActionButton(
 }
 
 @Composable
-private fun MusicDisc(item: VideoItem, spinning: Boolean) {
-    val rotation = remember { Animatable(0f) }
-    LaunchedEffect(spinning) {
-        // 暂停时停在当前角度，恢复时继续转
-        while (spinning) {
-            rotation.animateTo(rotation.value + 360f, tween(9000, easing = LinearEasing))
-        }
-    }
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .graphicsLayer { rotationZ = rotation.value }
-            .clip(CircleShape)
-            .background(Color(0xFF171717))
-            .border(5.dp, Color(0xFF262626), CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
-        RemoteImage(
-            url = item.cover,
-            contentDescription = null,
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape),
-            targetWidth = 96,
-            placeholder = Color(0xFF262626)
-        )
-        Icon(
-            painter = painterResource(R.drawable.ic_music),
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(13.dp)
-        )
-    }
-}
-
-@Composable
 private fun VideoInfo(item: VideoItem, enabled: Boolean, modifier: Modifier = Modifier) {
     var expanded by remember(item.bvid) { mutableStateOf(false) }
+    val description = item.desc.ifBlank { item.title }
     val shadow = Shadow(
-        color = Color.Black.copy(alpha = 0.68f),
+        color = Color.Black.copy(alpha = 0.62f),
         offset = Offset(0f, 1f),
         blurRadius = 5f
     )
@@ -882,72 +837,54 @@ private fun VideoInfo(item: VideoItem, enabled: Boolean, modifier: Modifier = Mo
             Text(
                 text = "@${item.ownerName}",
                 color = Color.White,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = TextStyle(
-                    shadow = shadow
-                ),
+                style = TextStyle(shadow = shadow),
                 modifier = Modifier.weight(1f, fill = false)
             )
             if (item.category.isNotBlank()) {
-                Spacer(Modifier.width(7.dp))
+                Spacer(Modifier.width(8.dp))
                 Box(
                     Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.White.copy(alpha = 0.18f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(Color.White.copy(alpha = 0.14f))
+                        .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
-                    Text(
-                        text = item.category,
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
+                    Text(item.category, color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
                 }
             }
         }
 
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
-            text = item.desc.ifBlank { item.title },
-            color = Color.White,
+            text = description,
+            color = Color.White.copy(alpha = 0.96f),
             fontSize = 14.sp,
-            maxLines = if (expanded) Int.MAX_VALUE else 3,
+            maxLines = if (expanded) Int.MAX_VALUE else 2,
             overflow = TextOverflow.Ellipsis,
-            style = TextStyle(shadow = shadow, lineHeight = 20.sp),
+            style = TextStyle(shadow = shadow, lineHeight = 21.sp),
             modifier = Modifier
-                .animateContentSize(spring(dampingRatio = 0.8f, stiffness = 420f))
-                .noRippleClickable(enabled = enabled) {
-                    expanded = !expanded
-                }
+                .animateContentSize(spring(dampingRatio = 0.86f, stiffness = 440f))
+                .noRippleClickable(enabled = enabled) { expanded = !expanded }
         )
-
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                painter = painterResource(R.drawable.ic_music),
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.9f),
-                modifier = Modifier.size(14.dp)
-            )
-            Spacer(Modifier.width(5.dp))
+        if (description.length > 56) {
             Text(
-                text = "视频原声 · ${item.ownerName}",
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(shadow = shadow)
+                text = if (expanded) "收起" else "展开",
+                color = Color.White.copy(alpha = 0.66f),
+                fontSize = 11.sp,
+                modifier = Modifier
+                    .pressClickable(enabled = enabled, pressedScale = 0.96f) { expanded = !expanded }
+                    .padding(top = 4.dp)
             )
         }
 
-        Spacer(Modifier.height(5.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
-            text = "哔哩哔哩 · ${item.category.ifBlank { "视频" }} · ${formatCount(item.view)} 播放",
-            color = Color.White.copy(alpha = 0.6f),
-            fontSize = DouyinType.bodySm,
-            fontFamily = DouyinNumberCondensed,
+            text = "${formatCount(item.view)} 次播放 · ${item.category.ifBlank { "视频" }}",
+            color = Color.White.copy(alpha = 0.56f),
+            fontSize = 11.sp,
             maxLines = 1,
             style = TextStyle(shadow = shadow)
         )
@@ -967,16 +904,18 @@ private fun PlayerSideTool(
     )
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(13.dp))
-            .background(Color.Black.copy(alpha = 0.42f))
-            .pressClickable(pressedScale = 0.88f) { onClick() }
-            .padding(horizontal = 9.dp, vertical = 5.dp)
+            .height(36.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (highlighted) BiliAccent.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.48f))
+            .pressClickable(pressedScale = 0.95f) { onClick() }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
         AnimatedSwapText(
             text = label,
             style = TextStyle(
                 color = textColor,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
             )
         )

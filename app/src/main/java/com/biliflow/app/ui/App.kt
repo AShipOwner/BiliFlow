@@ -3,10 +3,13 @@ package com.biliflow.app.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -27,6 +30,11 @@ import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,6 +65,7 @@ fun BiliFlowApp() {
     val authState by AuthManager.state.collectAsStateCompat()
     val loggedIn = authState is AuthState.LoggedIn
     var tab by rememberSaveable { mutableStateOf(0) }
+    var homeTab by rememberSaveable { mutableStateOf(HomeTab.RECOMMEND) }
     var playerItem by remember { mutableStateOf<VideoItem?>(null) }
     var liveRoom by remember { mutableStateOf<LiveRoom?>(null) }
     var showSearch by rememberSaveable { mutableStateOf(false) }
@@ -79,7 +88,6 @@ fun BiliFlowApp() {
     }
 
     Box(Modifier.fillMaxSize().background(appBackground())) {
-        UiHosts()
         val current = playerItem
         val room = liveRoom
         when {
@@ -101,13 +109,22 @@ fun BiliFlowApp() {
                 AnimatedContent(
                     targetState = tab,
                     transitionSpec = {
-                        fadeIn(tween(190)) togetherWith fadeOut(tween(110))
+                        val forward = targetState > initialState
+                        val direction = if (forward) 1 else -1
+                        (fadeIn(tween(200)) + slideInHorizontally(
+                            tween(240, easing = FastOutSlowInEasing)
+                        ) { it / 14 * direction }) togetherWith
+                            (fadeOut(tween(120)) + slideOutHorizontally(
+                                tween(160, easing = FastOutSlowInEasing)
+                            ) { -it / 18 * direction })
                     },
                     label = "mainTab"
                 ) { currentTab ->
                     when (currentTab) {
                         0 -> HomeScreen(
                             viewModel = viewModel,
+                            homeTab = homeTab,
+                            onHomeTabChange = { homeTab = it },
                             onSearch = { showSearch = true },
                             onOpenLive = { liveRoom = it },
                             onOpenSpace = { mid -> android.util.Log.d("BiliFlow", "open space $mid"); spaceMid = mid }
@@ -132,7 +149,7 @@ fun BiliFlowApp() {
                         )
                     }
                 }
-                DouyinBottomNav(
+                BiliFlowBottomNav(
                     selected = tab,
                     onSelect = { index ->
                         if (index == 4 && !loggedIn) {
@@ -141,8 +158,8 @@ fun BiliFlowApp() {
                             tab = index
                         }
                     },
-                    onPublish = { showPublish = true },
-                    immersive = tab == 0 || tab == 1,
+                    onPublish = { if (loggedIn) showPublish = true else LoginPrompt.show() },
+                    immersive = tab == 1 || (tab == 0 && (homeTab == HomeTab.FOLLOW || homeTab == HomeTab.RECOMMEND)),
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }
@@ -177,11 +194,13 @@ fun BiliFlowApp() {
                 onBack = { spaceMid = null }
             )
         }
+
+        UiHosts()
     }
 }
 
 @Composable
-private fun DouyinBottomNav(
+private fun BiliFlowBottomNav(
     selected: Int,
     onSelect: (Int) -> Unit,
     onPublish: () -> Unit,
@@ -189,31 +208,40 @@ private fun DouyinBottomNav(
     modifier: Modifier = Modifier
 ) {
     val background by animateColorAsState(
-        targetValue = if (immersive) Color.Black else appSurface(),
+        targetValue = if (immersive) Color.Black.copy(alpha = 0.94f) else appSurface(),
         animationSpec = tween(220),
         label = "navBackground"
     )
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .background(background)
             .navigationBarsPadding()
-            .height(52.dp)
-            .padding(horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        NavItem(0, selected == 0, Icons.Filled.Home, "首页", onSelect, Modifier.weight(1f), immersive)
-        NavItem(1, selected == 1, Icons.Filled.People, "朋友", onSelect, Modifier.weight(1f), immersive)
-        Box(
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = if (immersive) Color.White.copy(alpha = 0.08f) else appDivider()
+        )
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .pressClickable(pressedScale = 0.86f) { onPublish() },
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(horizontal = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            PublishButton()
+            NavItem(0, selected == 0, Icons.Filled.Home, Icons.Outlined.Home, "首页", onSelect, Modifier.weight(1f), immersive)
+            NavItem(1, selected == 1, Icons.Filled.People, Icons.Outlined.People, "朋友", onSelect, Modifier.weight(1f), immersive)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .pressClickable(pressedScale = 0.92f) { onPublish() },
+                contentAlignment = Alignment.Center
+            ) {
+                PublishButton()
+            }
+            NavItem(3, selected == 3, Icons.Filled.ChatBubble, Icons.Outlined.ChatBubbleOutline, "消息", onSelect, Modifier.weight(1f), immersive)
+            NavItem(4, selected == 4, Icons.Filled.Person, Icons.Outlined.Person, "我", onSelect, Modifier.weight(1f), immersive)
         }
-        NavItem(3, selected == 3, Icons.Filled.ChatBubble, "消息", onSelect, Modifier.weight(1f), immersive)
-        NavItem(4, selected == 4, Icons.Filled.Person, "我", onSelect, Modifier.weight(1f), immersive)
     }
 }
 
@@ -222,38 +250,17 @@ private fun PublishButton() {
     Box(
         modifier = Modifier
             .width(46.dp)
-            .height(30.dp),
+            .height(36.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(BiliAccent),
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            Modifier
-                .matchParentSize()
-                .padding(end = 5.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(BiliCyan)
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = "发布视频",
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
         )
-        Box(
-            Modifier
-                .matchParentSize()
-                .padding(start = 5.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(BiliAccent)
-        )
-        Box(
-            Modifier
-                .matchParentSize()
-                .padding(horizontal = 3.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.White),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = "发布",
-                tint = Color.Black,
-                modifier = Modifier.size(22.dp)
-            )
-        }
     }
 }
 
@@ -261,6 +268,7 @@ private fun PublishButton() {
 private fun NavItem(
     index: Int,
     selected: Boolean,
+    selectedIcon: ImageVector,
     icon: ImageVector,
     label: String,
     onSelect: (Int) -> Unit,
@@ -268,38 +276,47 @@ private fun NavItem(
     immersive: Boolean = false
 ) {
     val active = if (immersive) Color.White else appText()
-    val inactive = if (immersive) Color.White.copy(alpha = 0.6f) else appTextMuted()
+    val inactive = if (immersive) Color.White.copy(alpha = 0.52f) else appTextMuted()
     val tint by animateColorAsState(
         targetValue = if (selected) active else inactive,
-        animationSpec = tween(200),
+        animationSpec = tween(180),
         label = "navTint"
     )
     val scale by animateFloatAsState(
-        targetValue = if (selected) 1.08f else 1f,
+        targetValue = if (selected) 1.04f else 1f,
         animationSpec = BiliMotion.popSpring(),
         label = "navScale"
     )
     Column(
-        modifier = modifier.pressClickable(pressedScale = 0.9f) { onSelect(index) },
+        modifier = modifier.pressClickable(pressedScale = 0.96f) { onSelect(index) },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint,
+        Box(
             modifier = Modifier
-                .size(24.dp)
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-        )
+                .width(48.dp)
+                .height(32.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (selected && !immersive) appAccentSoft() else Color.Transparent),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (selected) selectedIcon else icon,
+                contentDescription = label,
+                tint = tint,
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
+            )
+        }
         Spacer(Modifier.height(2.dp))
         Text(
             text = label,
             color = tint,
             fontSize = 10.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
         )
     }
 }

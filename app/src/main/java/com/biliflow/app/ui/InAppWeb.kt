@@ -18,12 +18,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -62,46 +65,44 @@ fun InAppWebScreen(url: String, onClose: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(appSurface())
             .screenEnter()
             .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(48.dp)
-                .background(Color(0xFF161823))
+                .height(56.dp)
+                .background(appSurface())
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Filled.ArrowBack,
-                contentDescription = "返回",
-                tint = Color.White,
-                modifier = Modifier
-                    .size(24.dp)
-                    .noRippleClickable {
-                        val wv = webViewRef
-                        if (wv != null && wv.canGoBack()) wv.goBack() else onClose()
-                    }
+            AppIconButton(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                "返回",
+                onClick = {
+                    val wv = webViewRef
+                    if (wv != null && wv.canGoBack()) wv.goBack() else onClose()
+                }
             )
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                Icons.Filled.Lock,
+                contentDescription = null,
+                tint = appTextMuted(),
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(6.dp))
             Text(
                 text = title.ifBlank { "哔哩哔哩" },
-                color = Color.White,
-                fontSize = 14.sp,
+                color = appText(),
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 modifier = Modifier.weight(1f)
             )
-            Text(
-                text = "关闭",
-                color = Color(0xFFB0B0B3),
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .noRippleClickable { onClose() }
-                    .padding(horizontal = 8.dp)
-            )
+            AppIconButton(Icons.Filled.Close, "关闭网页", onClose)
         }
         AnimatedVisibility(
             visible = loading,
@@ -109,9 +110,9 @@ fun InAppWebScreen(url: String, onClose: () -> Unit) {
             exit = fadeOut(tween(250))
         ) {
             LinearProgressIndicator(
-                color = Color(0xFFFE2C55),
-                trackColor = Color(0xFF161823),
-                modifier = Modifier.fillMaxWidth().height(2.dp)
+                color = BiliAccent,
+                trackColor = appField(),
+                modifier = Modifier.fillMaxWidth().height(3.dp)
             )
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {

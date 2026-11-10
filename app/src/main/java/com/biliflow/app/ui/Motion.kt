@@ -45,20 +45,18 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 
-/** 全局动效曲线：按压要快、回弹要弹、转场要稳。 */
 object BiliMotion {
-    fun <T> pressSpring() = spring<T>(dampingRatio = 0.55f, stiffness = 700f)
-    fun <T> popSpring() = spring<T>(dampingRatio = 0.34f, stiffness = 520f)
-    fun <T> slideSpring() = spring<T>(dampingRatio = 0.82f, stiffness = 480f)
-    val TransitionEnter = tween<Float>(240, easing = FastOutSlowInEasing)
+    fun <T> pressSpring() = spring<T>(dampingRatio = 0.78f, stiffness = 700f)
+    fun <T> popSpring() = spring<T>(dampingRatio = 0.58f, stiffness = 520f)
+    fun <T> slideSpring() = spring<T>(dampingRatio = 0.86f, stiffness = 440f)
+    val TransitionEnter = tween<Float>(220, easing = FastOutSlowInEasing)
     val TransitionExit = tween<Float>(140, easing = FastOutSlowInEasing)
 }
 
-/** 无涟漪点击 + 按压回弹（替代 noRippleClickable 用于需要手感的位置）。 */
 @Composable
 fun Modifier.pressClickable(
     enabled: Boolean = true,
-    pressedScale: Float = 0.9f,
+    pressedScale: Float = 0.96f,
     onClick: () -> Unit
 ): Modifier {
     val interaction = remember { MutableInteractionSource() }
@@ -81,9 +79,8 @@ fun Modifier.pressClickable(
         )
 }
 
-/** 状态翻转为 true 时做一次「缩-弹」脉冲（点赞/收藏/关注），挂载时不触发。 */
 @Composable
-fun rememberPopScale(trigger: Boolean, initialScale: Float = 0.7f): Float {
+fun rememberPopScale(trigger: Boolean, initialScale: Float = 0.84f): Float {
     val scale = remember { Animatable(1f) }
     var previous by remember { mutableStateOf(trigger) }
     LaunchedEffect(trigger) {
@@ -96,7 +93,6 @@ fun rememberPopScale(trigger: Boolean, initialScale: Float = 0.7f): Float {
     return scale.value
 }
 
-/** 全屏页面进场：右滑入 + 淡入（播放页可改为缩放进场）。只播放一次，退出由系统返回处理。 */
 @Composable
 fun Modifier.screenEnter(
     slideFromRight: Boolean = true,
@@ -109,7 +105,7 @@ fun Modifier.screenEnter(
     return this.graphicsLayer {
         val p = progress.value
         alpha = p
-        translationX = if (slideFromRight) size.width * (1f - p) * 0.22f else 0f
+        translationX = if (slideFromRight) size.width * (1f - p) * 0.08f else 0f
         val scale = scaleFrom + (1f - scaleFrom) * p
         scaleX = scale
         scaleY = scale

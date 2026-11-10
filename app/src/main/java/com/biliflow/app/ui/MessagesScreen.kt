@@ -24,16 +24,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AlternateEmail
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -118,21 +121,22 @@ fun MessagesScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(bottom = 56.dp)
+                .padding(bottom = 72.dp)
         ) {
             Text(
                 text = "消息",
                 color = appText(),
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 18.dp, top = 14.dp, bottom = 12.dp)
+                modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 10.dp)
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MessageCategory("回复", Icons.Filled.ChatBubble, category == "reply") { category = "reply" }
                 MessageCategory("赞", Icons.Filled.Favorite, category == "like") { category = "like" }
@@ -141,36 +145,26 @@ fun MessagesScreen(
                 MessageCategory("私信", Icons.Filled.Email, category == "whisper") { category = "whisper" }
                 MessageCategory("系统", Icons.Filled.Notifications, category == "system") { category = "system" }
             }
-            HorizontalDivider(color = appDivider(), modifier = Modifier.padding(top = 6.dp))
+            Spacer(Modifier.height(6.dp))
 
             when {
                 !loggedIn -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("登录后查看消息", color = appText(), fontSize = 16.sp)
-                        Spacer(Modifier.height(14.dp))
-                        Button(
-                            onClick = { LoginPrompt.show() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = BiliAccent,
-                                contentColor = Color.White
-                            )
-                        ) { Text("扫码登录") }
+                        AppEmptyState(
+                            title = "登录后查看消息",
+                            description = "回复、点赞、粉丝和私信都会集中在这里",
+                            icon = Icons.Filled.ChatBubble
+                        )
+                        AppPrimaryButton(text = "扫码登录", onClick = { LoginPrompt.show() })
                     }
                 }
 
                 loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        color = BiliAccent,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(26.dp)
-                    )
+                    LoadingDots()
                 }
 
                 error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(error.orEmpty(), color = appTextMuted(), fontSize = 12.sp)
-                        TextButton(onClick = { reload++ }) { Text("重试", color = BiliAccent) }
-                    }
+                    AppErrorState(message = error.orEmpty(), onRetry = { reload++ })
                 }
 
                 category == "fans" -> {
@@ -249,7 +243,7 @@ fun MessagesScreen(
 @Composable
 private fun EmptyHint(text: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text, color = appTextMuted(), fontSize = 13.sp)
+        AppEmptyState(title = text, description = "新的互动会出现在这里")
     }
 }
 
@@ -261,47 +255,31 @@ private fun MessageCategory(
     onClick: () -> Unit
 ) {
     val background by animateColorAsState(
-        targetValue = if (selected) BiliAccent.copy(alpha = 0.18f) else appSurface(),
-        animationSpec = tween(200),
+        targetValue = if (selected) appAccentSoft() else appSurface(),
+        animationSpec = tween(180),
         label = "categoryBackground"
     )
     val tint by animateColorAsState(
-        targetValue = if (selected) BiliAccent else appText(),
-        animationSpec = tween(200),
+        targetValue = if (selected) BiliAccent else appTextMuted(),
+        animationSpec = tween(180),
         label = "categoryTint"
     )
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1.06f else 1f,
-        animationSpec = BiliMotion.popSpring(),
-        label = "categoryScale"
-    )
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.pressClickable(pressedScale = 0.88f) { onClick() }
+    Row(
+        modifier = Modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(background)
+            .pressClickable(pressedScale = 0.96f) { onClick() }
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .clip(CircleShape)
-                .background(background),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = tint,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Spacer(Modifier.height(6.dp))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(17.dp))
+        Spacer(Modifier.width(6.dp))
         Text(
             text = label,
             color = if (selected) appText() else appTextMuted(),
-            fontSize = 11.sp
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
         )
     }
 }
@@ -312,14 +290,14 @@ private fun MessageRow(message: MessageItem, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .noRippleClickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box {
             RemoteImage(
                 url = message.face,
                 contentDescription = message.nickname,
-                modifier = Modifier.size(46.dp).clip(CircleShape),
+                modifier = Modifier.size(48.dp).clip(CircleShape),
                 targetWidth = 120
             )
             if (message.isNew) {
@@ -375,13 +353,13 @@ private fun FanRow(fan: FanItem, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .noRippleClickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RemoteImage(
             url = fan.face,
             contentDescription = fan.name,
-            modifier = Modifier.size(46.dp).clip(CircleShape),
+            modifier = Modifier.size(48.dp).clip(CircleShape),
             targetWidth = 120
         )
         Spacer(Modifier.width(12.dp))
@@ -405,14 +383,14 @@ private fun SessionRow(session: WhisperSession, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .noRippleClickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box {
             RemoteImage(
                 url = session.face,
                 contentDescription = session.name,
-                modifier = Modifier.size(46.dp).clip(CircleShape),
+                modifier = Modifier.size(48.dp).clip(CircleShape),
                 targetWidth = 120
             )
             if (session.unread > 0) {
@@ -425,7 +403,7 @@ private fun SessionRow(session: WhisperSession, onClick: () -> Unit) {
                 ) {
                     Text(
                         text = if (session.unread > 99) "99+" else session.unread.toString(),
-                        color = appText(),
+                        color = Color.White,
                         fontSize = 9.sp
                     )
                 }
@@ -498,12 +476,7 @@ private fun ChatScreen(
             Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                Modifier.size(42.dp).pressClickable(pressedScale = 0.85f) { onBack() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "返回", tint = appText())
-            }
+            AppIconButton(Icons.AutoMirrored.Filled.ArrowBack, "返回", onBack)
             Box(
                 Modifier
                     .size(34.dp)
@@ -531,7 +504,7 @@ private fun ChatScreen(
 
         if (loading) {
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = BiliAccent, strokeWidth = 2.dp, modifier = Modifier.size(26.dp))
+                LoadingDots()
             }
         } else {
             LazyColumn(
@@ -551,15 +524,30 @@ private fun ChatScreen(
                         Box(
                             Modifier
                                 .widthIn(max = 280.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(
+                                    RoundedCornerShape(
+                                        topStart = 18.dp,
+                                        topEnd = 18.dp,
+                                        bottomStart = if (message.isMine) 18.dp else 5.dp,
+                                        bottomEnd = if (message.isMine) 5.dp else 18.dp
+                                    )
+                                )
                                 .background(if (message.isMine) BiliAccent else appSurface())
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
                         ) {
                             Text(
                                 text = prettyMessage(message.content),
                                 color = if (message.isMine) Color.White else appText(),
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                lineHeight = 21.sp
                             )
+                        }
+                    }
+                }
+                if (messages.isEmpty()) {
+                    item {
+                        Box(Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
+                            AppEmptyState(title = "还没有消息", description = "发一条消息，开始这次对话")
                         }
                     }
                 }
@@ -634,10 +622,10 @@ private fun SystemRow(message: MessageItem, onClick: () -> Unit) {
             Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFFE2C55).copy(alpha = 0.16f)),
+                .background(appAccentSoft()),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Filled.Notifications, null, tint = Color(0xFFFE2C55), modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.Notifications, null, tint = BiliAccent, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
@@ -673,7 +661,7 @@ private fun ChatComposer(onSend: (String) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         androidx.compose.foundation.text.BasicTextField(
@@ -681,36 +669,44 @@ private fun ChatComposer(onSend: (String) -> Unit) {
             onValueChange = { text = it.take(500) },
             modifier = Modifier
                 .weight(1f)
-                .height(38.dp)
-                .clip(RoundedCornerShape(19.dp))
+                .height(44.dp)
+                .clip(RoundedCornerShape(22.dp))
                 .background(appField())
-                .padding(horizontal = 14.dp),
+                .padding(horizontal = 16.dp),
             singleLine = true,
-            textStyle = androidx.compose.ui.text.TextStyle(color = appText(), fontSize = 13.sp),
+            textStyle = androidx.compose.ui.text.TextStyle(color = appText(), fontSize = 14.sp),
             cursorBrush = androidx.compose.ui.graphics.SolidColor(BiliAccent),
             decorationBox = { inner ->
                 Box(contentAlignment = Alignment.CenterStart) {
                     if (text.isEmpty()) {
-                        Text("发消息…", color = appTextMuted(), fontSize = 13.sp)
+                        Text("发消息…", color = appTextMuted(), fontSize = 14.sp)
                     }
                     inner()
                 }
             }
         )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = "发送",
-            color = if (text.isBlank()) appTextMuted() else BiliAccent,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.noRippleClickable {
-                val value = text.trim()
-                if (value.isNotBlank()) {
-                    onSend(value)
-                    text = ""
-                    focusManager.clearFocus()
-                }
-            }
-        )
+        Spacer(Modifier.width(10.dp))
+        Box(
+            Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(if (text.isBlank()) appChip() else BiliAccent)
+                .pressClickable(enabled = text.isNotBlank(), pressedScale = 0.94f) {
+                    val value = text.trim()
+                    if (value.isNotBlank()) {
+                        onSend(value)
+                        text = ""
+                        focusManager.clearFocus()
+                    }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.Send,
+                contentDescription = "发送消息",
+                tint = if (text.isBlank()) appTextMuted() else Color.White,
+                modifier = Modifier.size(19.dp)
+            )
+        }
     }
 }

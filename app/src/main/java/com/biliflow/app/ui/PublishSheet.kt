@@ -4,16 +4,24 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.VideoCall
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,70 +81,136 @@ fun PublishSheet(onDismiss: () -> Unit) {
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = appSurface(),
         contentColor = appText(),
-        dragHandle = { BottomSheetDefaults.DragHandle(color = appTextMuted()) }
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = appTextMuted().copy(alpha = 0.45f)) }
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 28.dp)
+                .padding(bottom = 24.dp)
         ) {
-            Text("投稿视频", color = appText(), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(4.dp))
+            Text("投稿视频", color = appText(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(5.dp))
             Text(
-                "应用内直接上传到 B 站（upos 分片），提交后可在创作中心查看审核状态",
+                "本机选择并直接上传到 B 站，提交后可在创作中心查看审核状态",
                 color = appTextMuted(),
-                fontSize = 11.sp
+                fontSize = 12.sp,
+                lineHeight = 18.sp
             )
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(20.dp))
 
+            PublishSectionLabel("01  选择视频")
+            Spacer(Modifier.height(10.dp))
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFF1F1F2))
-                    .noRippleClickable { picker.launch("video/*") }
-                    .padding(14.dp),
+                    .heightIn(min = 96.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(appSurfaceRaised())
+                    .border(1.dp, appDivider(), RoundedCornerShape(16.dp))
+                    .pressClickable(pressedScale = 0.97f) { picker.launch("video/*") }
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.VideoCall, null, tint = BiliAccent, modifier = Modifier.size(26.dp))
-                Spacer(Modifier.width(12.dp))
+                Box(
+                    Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(appAccentSoft()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (videoUri == null) Icons.Filled.VideoCall else Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = BiliAccent,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = if (videoUri == null) "选择视频" else "已选择",
+                        text = if (videoUri == null) "选择本地视频" else "视频已就绪",
                         color = appText(),
                         fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = videoName.ifBlank { "支持 mp4、mov 等常见格式" },
+                        color = appTextMuted(),
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        maxLines = 2
+                    )
+                    if (videoUri != null) {
+                        Spacer(Modifier.height(3.dp))
+                        Text("轻触可重新选择", color = BiliAccent, fontSize = 11.sp)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            PublishSectionLabel("02  视频信息")
+            Spacer(Modifier.height(6.dp))
+            PublishField("标题", title, "填写一个清晰的标题") { title = it.take(80) }
+            PublishField(
+                label = "简介",
+                value = desc,
+                placeholder = "补充视频内容、来源或其他说明",
+                singleLine = false,
+                onChange = { desc = it.take(300) }
+            )
+            PublishField("分区 ID", tid, "如 17=游戏，21=生活日常") {
+                tid = it.filter { c -> c.isDigit() }.take(4)
+            }
+            PublishField("标签", tag, "多个标签用逗号分隔") { tag = it.take(60) }
+
+            Spacer(Modifier.height(14.dp))
+            PublishSectionLabel("03  发布设置")
+            Spacer(Modifier.height(10.dp))
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 72.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(appSurfaceRaised())
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = if (onlySelf) "仅自己可见" else "公开投稿",
+                        color = appText(),
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
+                    Spacer(Modifier.height(3.dp))
                     Text(
-                        text = videoName.ifBlank { "支持 mp4/mov 等常见格式" },
+                        text = if (onlySelf) "投稿后只有当前账号可以查看" else "审核通过后公开展示",
                         color = appTextMuted(),
                         fontSize = 11.sp
                     )
                 }
-            }
-
-            Spacer(Modifier.height(14.dp))
-            PublishField("标题", title) { title = it.take(80) }
-            PublishField("简介", desc) { desc = it.take(300) }
-            PublishField("分区 ID（如 17=游戏，21=生活日常）", tid) { tid = it.filter { c -> c.isDigit() }.take(4) }
-            PublishField("标签（逗号分隔）", tag) { tag = it.take(60) }
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("仅自己可见", color = appText(), fontSize = 13.sp, modifier = Modifier.weight(1f))
                 androidx.compose.material3.Switch(
                     checked = onlySelf,
                     onCheckedChange = { onlySelf = it },
-                    colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = BiliAccent)
+                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                        checkedTrackColor = BiliAccent,
+                        uncheckedTrackColor = appField()
+                    )
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
+            PublishSectionLabel("04  确认并上传")
+            Spacer(Modifier.height(12.dp))
             val canSubmit = !uploading && videoUri != null && title.isNotBlank()
             val submitBackground by androidx.compose.animation.animateColorAsState(
-                targetValue = if (canSubmit || uploading) BiliAccent else Color(0xFF444444),
+                targetValue = if (canSubmit || uploading) BiliAccent else appChip(),
                 animationSpec = androidx.compose.animation.core.tween(200),
                 label = "submitBackground"
             )
@@ -145,11 +219,43 @@ fun PublishSheet(onDismiss: () -> Unit) {
                 animationSpec = androidx.compose.animation.core.tween(300),
                 label = "uploadProgress"
             )
+            if (uploading) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "正在上传视频，请保持应用开启",
+                        color = appTextMuted(),
+                        fontSize = 11.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "${(progress * 100).toInt()}%",
+                        color = appText(),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(CircleShape)
+                        .background(appField())
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(animatedProgress.coerceIn(0f, 1f))
+                            .height(6.dp)
+                            .background(BiliAccent)
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+            }
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(submitBackground)
                     .pressClickable(enabled = canSubmit, pressedScale = 0.97f) {
                         val uri = videoUri ?: return@pressClickable
@@ -178,40 +284,24 @@ fun PublishSheet(onDismiss: () -> Unit) {
                                 uploading = false
                             }
                         }
-                    }
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                if (uploading) {
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .clip(RoundedCornerShape(22.dp))
-                    ) {
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .fillMaxWidth(animatedProgress.coerceIn(0f, 1f))
-                                .background(Color.White.copy(alpha = 0.18f))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (uploading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(18.dp)
                         )
+                        Spacer(Modifier.width(8.dp))
                     }
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "上传中 ${(progress * 100).toInt()}%",
-                                color = Color.White,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                } else {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("上传投稿", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    }
+                    Text(
+                        text = if (uploading) "上传中 ${(progress * 100).toInt()}%" else "上传投稿",
+                        color = if (canSubmit || uploading) Color.White else appTextMuted(),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }
@@ -219,22 +309,42 @@ fun PublishSheet(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun PublishField(label: String, value: String, onChange: (String) -> Unit) {
-    Column(Modifier.padding(vertical = 5.dp)) {
-        Text(label, color = appTextMuted(), fontSize = 11.sp)
-        Spacer(Modifier.height(4.dp))
+private fun PublishSectionLabel(text: String) {
+    Text(text, color = appTextMuted(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+}
+
+@Composable
+private fun PublishField(
+    label: String,
+    value: String,
+    placeholder: String,
+    singleLine: Boolean = true,
+    onChange: (String) -> Unit
+) {
+    Column(Modifier.padding(vertical = 6.dp)) {
+        Text(label, color = appTextMuted(), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Spacer(Modifier.height(7.dp))
         androidx.compose.foundation.text.BasicTextField(
             value = value,
             onValueChange = onChange,
-            singleLine = true,
+            singleLine = singleLine,
+            maxLines = if (singleLine) 1 else 5,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(40.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (LocalAppDark.current) Color(0xFF262626) else Color(0xFFF4F4F5))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            textStyle = TextStyle(color = appText(), fontSize = 13.sp),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(BiliAccent)
+                .heightIn(min = if (singleLine) 48.dp else 96.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(appField())
+                .padding(horizontal = 14.dp, vertical = 13.dp),
+            textStyle = TextStyle(color = appText(), fontSize = 14.sp, lineHeight = 20.sp),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(BiliAccent),
+            decorationBox = { inner ->
+                Box {
+                    if (value.isEmpty()) {
+                        Text(placeholder, color = appTextMuted(), fontSize = 13.sp, lineHeight = 19.sp)
+                    }
+                    inner()
+                }
+            }
         )
     }
 }

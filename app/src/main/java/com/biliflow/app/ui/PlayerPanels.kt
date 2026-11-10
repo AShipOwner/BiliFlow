@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,8 +16,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -44,8 +51,10 @@ fun PlayerSelectSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = BiliSurface,
-        contentColor = Color.White
+        containerColor = appSurface(),
+        contentColor = appText(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = appDivider()) }
     ) {
         Column(
             Modifier
@@ -54,12 +63,12 @@ fun PlayerSelectSheet(
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 16.dp)
         ) {
-            Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(10.dp))
+            Text(title, color = appText(), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(12.dp))
             options.forEach { option ->
                 val active = option == selected
                 val rowBackground by animateColorAsState(
-                    targetValue = if (active) Color(0xFF2A2A31) else Color.Transparent,
+                    targetValue = if (active) appAccentSoft() else Color.Transparent,
                     animationSpec = tween(180),
                     label = "optionBackground"
                 )
@@ -67,16 +76,16 @@ fun PlayerSelectSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 3.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(14.dp))
                         .background(rowBackground)
                         .pressClickable(pressedScale = 0.97f) { onSelect(option) }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = option,
-                        color = if (active) BiliAccent else Color.White,
-                        fontSize = 14.sp,
+                        color = if (active) BiliAccent else appText(),
+                        fontSize = 15.sp,
                         fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                         modifier = Modifier.weight(1f)
                     )
@@ -85,7 +94,12 @@ fun PlayerSelectSheet(
                         enter = scaleIn(tween(180), initialScale = 0.6f) + fadeIn(tween(150)),
                         exit = scaleOut(tween(120), targetScale = 0.6f) + fadeOut(tween(100))
                     ) {
-                        Text("当前", color = BiliAccent, fontSize = 11.sp)
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = "当前选中",
+                            tint = BiliAccent,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }

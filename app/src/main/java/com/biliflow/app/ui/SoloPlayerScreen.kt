@@ -12,9 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -54,6 +53,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun SoloPlayerScreen(
     seed: VideoItem,
@@ -304,7 +304,8 @@ fun SoloPlayerScreen(
             durationMs = durationMs,
             onSeek = { fraction ->
                 if (durationMs > 0L) player.seekTo((fraction * durationMs).toLong())
-            }
+            },
+            chromeBottomPadding = 12.dp
         )
 
         Row(
@@ -312,46 +313,25 @@ fun SoloPlayerScreen(
                 .fillMaxWidth()
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color.Black.copy(alpha = 0.66f), Color.Transparent)
+                        listOf(Color.Black.copy(alpha = 0.62f), Color.Transparent)
                     )
                 )
                 .statusBarsPadding()
-                .padding(horizontal = 6.dp, vertical = 4.dp),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .pressClickable(pressedScale = 0.85f) { onBack() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "返回",
-                    tint = Color.White
-                )
-            }
-            Spacer(Modifier.width(2.dp))
+            AppIconButton(Icons.AutoMirrored.Filled.ArrowBack, "返回", onBack, tint = Color.White)
+            Spacer(Modifier.width(4.dp))
             Text(
                 text = item.title,
                 color = Color.White,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .pressClickable(pressedScale = 0.85f) { openBiliVideo(context, item) },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "在 B 站打开",
-                    tint = Color.White
-                )
-            }
+            AppIconButton(Icons.AutoMirrored.Filled.OpenInNew, "在哔哩哔哩打开", { openBiliVideo(context, item) }, tint = Color.White)
         }
     }
 

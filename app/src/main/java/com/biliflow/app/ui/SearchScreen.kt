@@ -26,7 +26,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
@@ -135,34 +135,21 @@ fun SearchScreen(onOpenVideo: (VideoItem) -> Unit, onBack: () -> Unit = {}) {
             .screenEnter()
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(bottom = 58.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 10.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .pressClickable(pressedScale = 0.85f) { onBack() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "返回",
-                    tint = appText(),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
+            AppIconButton(Icons.AutoMirrored.Filled.ArrowBack, "返回", onBack)
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(appSurface())
-                    .padding(horizontal = 12.dp),
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(appField())
+                    .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -185,7 +172,7 @@ fun SearchScreen(onOpenVideo: (VideoItem) -> Unit, onBack: () -> Unit = {}) {
                         Box(contentAlignment = Alignment.CenterStart) {
                             if (query.isEmpty()) {
                                 Text(
-                                    text = "搜索 B 站视频",
+                                    text = "搜索视频、UP 主或关键词",
                                     color = appTextMuted(),
                                     fontSize = 14.sp
                                 )
@@ -195,23 +182,30 @@ fun SearchScreen(onOpenVideo: (VideoItem) -> Unit, onBack: () -> Unit = {}) {
                     }
                 )
                 if (query.isNotEmpty()) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "清除",
-                        tint = appTextMuted(),
-                        modifier = Modifier
-                            .size(18.dp)
-                            .noRippleClickable { query = "" }
-                    )
+                    Box(
+                        Modifier
+                            .size(28.dp)
+                            .pressClickable(pressedScale = 0.94f) { query = "" },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "清除关键词",
+                            tint = appTextMuted(),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(8.dp))
             Text(
                 text = "搜索",
-                color = if (query.isBlank()) appTextMuted() else appText(),
+                color = if (query.isBlank()) appTextMuted() else BiliAccent,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.noRippleClickable { submit(query) }
+                modifier = Modifier
+                    .pressClickable(enabled = query.isNotBlank(), pressedScale = 0.96f) { submit(query) }
+                    .padding(8.dp)
             )
         }
 
@@ -223,24 +217,8 @@ fun SearchScreen(onOpenVideo: (VideoItem) -> Unit, onBack: () -> Unit = {}) {
             }
 
             error != null -> {
-                Column(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("搜索失败", color = appText(), fontSize = 15.sp)
-                    Spacer(Modifier.height(5.dp))
-                    Text(
-                        text = error.orEmpty(),
-                        color = appTextMuted(),
-                        fontSize = 11.sp,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 32.dp)
-                    )
-                    TextButton(onClick = { searchToken++ }) {
-                        Text("重试", color = BiliAccent)
-                    }
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    AppErrorState(message = error.orEmpty(), onRetry = { searchToken++ })
                 }
             }
 
@@ -288,10 +266,10 @@ fun SearchScreen(onOpenVideo: (VideoItem) -> Unit, onBack: () -> Unit = {}) {
                     Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "没有找到「$submitted」相关视频",
-                        color = appTextMuted(),
-                        fontSize = 13.sp
+                    AppEmptyState(
+                        title = "没有找到「$submitted」",
+                        description = "换个关键词，或试试更短的描述",
+                        icon = Icons.Filled.Search
                     )
                 }
             }
@@ -316,7 +294,7 @@ private fun SearchLanding(history: List<String>, onPick: (String) -> Unit) {
             .padding(horizontal = 20.dp, vertical = 14.dp)
     ) {
         Text(
-            text = "随便看看",
+            text = "大家都在搜",
             color = appText(),
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold
@@ -326,10 +304,10 @@ private fun SearchLanding(history: List<String>, onPick: (String) -> Unit) {
             listOf("猫", "音乐", "原神", "纪录片").forEach { word ->
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(14.dp))
                         .background(appSurface())
-                        .pressClickable(pressedScale = 0.92f) { onPick(word) }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .pressClickable(pressedScale = 0.96f) { onPick(word) }
+                        .padding(horizontal = 14.dp, vertical = 9.dp)
                 ) {
                     Text(text = word, color = appText().copy(alpha = 0.9f), fontSize = 12.sp)
                 }
@@ -363,8 +341,8 @@ private fun SearchLanding(history: List<String>, onPick: (String) -> Unit) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .noRippleClickable { onPick(word) }
-                        .padding(vertical = 10.dp),
+                        .pressClickable(pressedScale = 0.98f) { onPick(word) }
+                        .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -387,7 +365,7 @@ private fun SearchLanding(history: List<String>, onPick: (String) -> Unit) {
 
         Spacer(Modifier.height(30.dp))
         Text(
-            text = "数据来自哔哩哔哩公开 Web 接口\n登录、会员内容与互动功能未包含在本客户端中",
+            text = "数据来自哔哩哔哩公开 Web 接口\n登录状态仅保存在本机",
             color = appTextMuted(),
             fontSize = 11.sp,
             lineHeight = 18.sp
@@ -400,7 +378,7 @@ private fun SearchSkeleton() {
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         repeat(6) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)) {
-                SkeletonBox(Modifier.width(148.dp).height(83.dp), RoundedCornerShape(8.dp))
+                SkeletonBox(Modifier.width(136.dp).height(90.dp), RoundedCornerShape(12.dp))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     SkeletonBox(Modifier.fillMaxWidth().height(14.dp))
@@ -425,14 +403,17 @@ private fun SearchResultRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 5.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(appSurface())
             .pressClickable(pressedScale = 0.98f) { onClick() }
-            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .padding(10.dp)
     ) {
         Box(
             Modifier
-                .width(148.dp)
-                .height(83.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .width(136.dp)
+                .height(90.dp)
+                .clip(RoundedCornerShape(12.dp))
         ) {
             RemoteImage(
                 url = item.cover,
@@ -442,39 +423,40 @@ private fun SearchResultRow(
             )
             Text(
                 text = formatDuration(item.durationSec),
-                color = appText(),
-                fontSize = 9.sp,
+                color = Color.White,
+                fontSize = 10.sp,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(4.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(Color.Black.copy(alpha = 0.7f))
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                    .padding(6.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.Black.copy(alpha = 0.72f))
+                    .padding(horizontal = 6.dp, vertical = 3.dp)
             )
         }
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 text = item.title,
                 color = appText(),
                 fontSize = 14.sp,
-                lineHeight = 19.sp,
+                fontWeight = FontWeight.Medium,
+                lineHeight = 20.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(7.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = item.ownerName,
                 color = appTextMuted(),
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(5.dp))
             Text(
                 text = "${formatCount(item.view)} 播放 · ${formatCount(item.danmaku)} 弹幕",
-                color = appText().copy(alpha = 0.45f),
-                fontSize = 10.sp
+                color = appTextMuted(),
+                fontSize = 11.sp
             )
         }
     }

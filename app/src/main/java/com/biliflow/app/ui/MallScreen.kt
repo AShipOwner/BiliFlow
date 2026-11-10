@@ -34,7 +34,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material.icons.filled.Toys
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -75,6 +76,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biliflow.app.data.BiliApi
 import com.biliflow.app.data.MallItem
+import com.biliflow.app.data.UiMessages
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -102,7 +104,7 @@ private val MALL_CATEGORIES = listOf(
     MallEntry(Icons.Filled.TheaterComedy, "演出", "演出"),
     MallEntry(Icons.Filled.Toys, "手办", "手办"),
     MallEntry(Icons.Filled.Category, "周边", "周边"),
-    MallEntry(Icons.Filled.MenuBook, "漫画", "漫画"),
+    MallEntry(Icons.AutoMirrored.Filled.MenuBook, "漫画", "漫画"),
     MallEntry(Icons.Filled.Movie, "影视", "影视")
 )
 
@@ -195,7 +197,7 @@ private fun MallHome() {
             .fillMaxSize()
             .background(appBackground())
             .statusBarsPadding()
-            .padding(top = 50.dp, bottom = 54.dp)
+            .padding(top = 60.dp, bottom = 72.dp)
     ) {
         Row(
             Modifier
@@ -206,10 +208,10 @@ private fun MallHome() {
             Row(
                 Modifier
                     .weight(1f)
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(18.dp))
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(20.dp))
                     .background(appField())
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -279,13 +281,13 @@ private fun MallHome() {
             MALL_CHANNELS.forEachIndexed { index, item ->
                 val selected = !searching && channel == index
                 val chipBackground by animateColorAsState(
-                    targetValue = if (selected) appText() else Color(0xFF1F1F23),
-                    animationSpec = tween(200),
+                    targetValue = if (selected) appAccentSoft() else appSurface(),
+                    animationSpec = tween(180),
                     label = "mallChipBackground"
                 )
                 val chipTextColor by animateColorAsState(
-                    targetValue = if (selected) Color.Black else appTextMuted(),
-                    animationSpec = tween(200),
+                    targetValue = if (selected) BiliAccent else appTextMuted(),
+                    animationSpec = tween(180),
                     label = "mallChipText"
                 )
                 Text(
@@ -294,14 +296,14 @@ private fun MallHome() {
                     fontSize = 13.sp,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(13.dp))
+                        .clip(RoundedCornerShape(14.dp))
                         .background(chipBackground)
-                        .pressClickable(pressedScale = 0.92f) {
+                        .pressClickable(pressedScale = 0.96f) {
                             keyword = ""
                             channel = index
                             feedType = item.feedType
                         }
-                        .padding(horizontal = 14.dp, vertical = 5.dp)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
                 )
             }
             Spacer(Modifier.weight(1f))
@@ -358,24 +360,23 @@ private fun MallHome() {
         Box(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(
-                    Brush.horizontalGradient(listOf(Color(0xFF2A1220), Color(0xFF3A1A2A)))
-                )
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(appAccentSoft())
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Column {
                 Text(
                     if (searching) "搜索结果：$keyword" else "哔哩哔哩会员购",
-                    color = Color.White,
-                    fontSize = 13.sp,
+                    color = appText(),
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
+                Spacer(Modifier.height(3.dp))
                 Text(
-                    if (searching) "来自会员购推荐流的匹配商品" else "正品手办 · 周边 · 演出票务 · 官方直发",
-                    color = Color.White.copy(alpha = 0.72f),
-                    fontSize = 11.sp
+                    if (searching) "来自会员购推荐流的匹配商品" else "手办 · 周边 · 演出票务 · 官方直发",
+                    color = appTextMuted(),
+                    fontSize = 12.sp
                 )
             }
         }
@@ -384,48 +385,43 @@ private fun MallHome() {
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
-                loading && products.isEmpty() -> CircularProgressIndicator(
-                    color = BiliAccent,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.align(Alignment.Center).size(26.dp)
+                loading && products.isEmpty() -> Column(
+                    Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    repeat(3) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            repeat(2) {
+                                SkeletonBox(
+                                    Modifier.weight(1f).aspectRatio(0.78f),
+                                    RoundedCornerShape(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                failed && products.isEmpty() -> AppErrorState(
+                    message = "会员购内容暂时不可用",
+                    onRetry = { reloadKey += 1 },
+                    modifier = Modifier.align(Alignment.Center)
                 )
 
-                failed && products.isEmpty() -> Column(
-                    Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("商城加载失败", color = appTextMuted(), fontSize = 13.sp)
-                    Text(
-                        text = "点击重试",
-                        color = BiliAccent,
-                        fontSize = 13.sp,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .noRippleClickable { reloadKey += 1 }
-                    )
-                }
-
-                products.isEmpty() && searching -> Column(
-                    Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("未找到「$keyword」相关商品", color = appTextMuted(), fontSize = 13.sp)
-                    Text(
-                        text = "去会员购网页搜索",
-                        color = BiliAccent,
-                        fontSize = 13.sp,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .noRippleClickable { openUrl(context, mallSearchUrl(keyword)) }
-                    )
-                }
+                products.isEmpty() && searching -> AppEmptyState(
+                    title = "未找到「$keyword」相关商品",
+                    description = "也可以前往会员购网页继续搜索",
+                    icon = Icons.Outlined.SearchOff,
+                    actionLabel = "去网页搜索",
+                    onAction = { openUrl(context, mallSearchUrl(keyword)) },
+                    modifier = Modifier.align(Alignment.Center)
+                )
 
                 else -> LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     state = gridState,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(products, key = { it.id.ifBlank { it.title } }) { item ->
@@ -478,16 +474,19 @@ private fun MallEntryCell(entry: MallEntry, tint: Color, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .width(62.dp)
-            .noRippleClickable { onClick() }
+            .pressClickable(pressedScale = 0.95f) { onClick() }
     ) {
-        Icon(
-            imageVector = entry.icon,
-            contentDescription = entry.label,
-            tint = tint,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(entry.label, color = appTextMuted(), fontSize = 10.sp, maxLines = 1)
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(if (tint == BiliAccent) appAccentSoft() else appField()),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(entry.icon, contentDescription = null, tint = tint, modifier = Modifier.size(21.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(entry.label, color = appTextMuted(), fontSize = 11.sp, maxLines = 1)
     }
 }
 
@@ -496,9 +495,9 @@ private fun MallCard(item: MallItem, modifier: Modifier = Modifier, onClick: () 
     Column(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(appSurface())
-            .pressClickable(pressedScale = 0.96f) { onClick() }
+            .pressClickable(pressedScale = 0.97f) { onClick() }
     ) {
         Box(
             Modifier
@@ -511,45 +510,45 @@ private fun MallCard(item: MallItem, modifier: Modifier = Modifier, onClick: () 
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 targetWidth = 540,
-                placeholder = Color(0xFF1B1B1F)
+                placeholder = appField()
             )
             if (item.tag.isNotBlank()) {
                 Text(
                     text = item.tag,
-                    color = appText(),
-                    fontSize = 9.sp,
+                    color = Color.White,
+                    fontSize = 10.sp,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(6.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xCC000000))
-                        .padding(horizontal = 5.dp, vertical = 2.dp)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(Color.Black.copy(alpha = 0.62f))
+                        .padding(horizontal = 7.dp, vertical = 3.dp)
                 )
             }
         }
         Text(
             text = item.title,
             color = appText(),
-            fontSize = 12.sp,
-            lineHeight = 16.sp,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+            modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 8.dp)
         )
         Row(
-            Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+            Modifier.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = item.priceSymbol,
                 color = BiliAccent,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = item.priceText.ifBlank { "查看" },
                 color = BiliAccent,
-                fontSize = 15.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -569,7 +568,8 @@ private fun MallDetailSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = appSurface(),
-        contentColor = appText()
+        contentColor = appText(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
             Modifier
@@ -583,7 +583,7 @@ private fun MallDetailSheet(
                     Modifier
                         .width(120.dp)
                         .aspectRatio((1f / item.ratio).coerceIn(0.7f, 1.3f))
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(14.dp))
                 ) {
                     RemoteImage(
                         url = item.image,
@@ -591,7 +591,7 @@ private fun MallDetailSheet(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                         targetWidth = 480,
-                        placeholder = Color(0xFF1B1B1F)
+                        placeholder = appField()
                     )
                 }
                 Spacer(Modifier.width(12.dp))
@@ -631,36 +631,22 @@ private fun MallDetailSheet(
             }
 
             Spacer(Modifier.height(16.dp))
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(BiliAccent)
-                    .pressClickable(pressedScale = 0.97f) { onOpenWeb() }
-                    .padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text("去会员购购买", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(appField())
-                    .pressClickable(pressedScale = 0.97f) {
-                        val clip = android.content.ClipboardManager::class.java
-                        val manager = context.getSystemService(clip) as android.content.ClipboardManager
-                        manager.setPrimaryClip(
-                            android.content.ClipData.newPlainText("mall", item.url)
-                        )
-                        android.widget.Toast.makeText(context, "链接已复制", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                    .padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text("复制商品链接", color = appText(), fontSize = 14.sp)
-            }
+            AppPrimaryButton(
+                text = "去会员购购买",
+                onClick = onOpenWeb,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(10.dp))
+            AppSecondaryButton(
+                text = "复制商品链接",
+                onClick = {
+                    val clip = android.content.ClipboardManager::class.java
+                    val manager = context.getSystemService(clip) as android.content.ClipboardManager
+                    manager.setPrimaryClip(android.content.ClipData.newPlainText("mall", item.url))
+                    UiMessages.show("链接已复制")
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
