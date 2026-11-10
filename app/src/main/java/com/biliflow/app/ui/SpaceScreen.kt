@@ -77,9 +77,7 @@ fun SpaceScreen(
     var loadingMore by remember(mid) { mutableStateOf(false) }
     var end by remember(mid) { mutableStateOf(false) }
     var error by remember(mid) { mutableStateOf<String?>(null) }
-    var following by remember(mid) {
-        mutableStateOf(AuthManager.isLoggedIn && AuthManager.mid > 0L)
-    }
+    var following by remember(mid) { mutableStateOf(false) }
     var followingBusy by remember(mid) { mutableStateOf(false) }
     val gridState = rememberLazyGridState()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
